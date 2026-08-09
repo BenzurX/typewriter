@@ -1,0 +1,1463 @@
+/* ============================================================
+   TYPEWRITER - style.css
+   Sections:
+     1. Fonts
+     2. Tokens
+     3. Reset / desk
+     4. Machine chrome (platen, bail, lever)
+     5. Sheet viewport, paper, grain, light, vignette
+     6. Ink impressions and correction patches
+     7. Type guide
+     8. Button rail (arms, rings, caps)
+     9. Settings card
+    10. Card controls (lever, select, thumbwheel, spool)
+    11. Erase confirmation (carbon slip)
+    12. Reduced motion
+    13. Responsive
+   ============================================================ */
+
+
+/* ------------------------------------------------------------
+   1. FONTS
+   Files are expected at assets/fonts/<slug>.woff2. If a file is
+   missing the family simply fails to load and the monospace
+   fallback in --face keeps the app usable.
+   ------------------------------------------------------------ */
+
+@font-face {
+  font-family: "TT2020";
+  src: url("assets/fonts/tt2020.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Courier Prime";
+  src: url("assets/fonts/courier-prime.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Special Elite";
+  src: url("assets/fonts/special-elite.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Cutive Mono";
+  src: url("assets/fonts/cutive-mono.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+
+/* ------------------------------------------------------------
+   2. TOKENS
+   ------------------------------------------------------------ */
+
+:root {
+  /* grid */
+  --scale: 2;
+  --cell-w: calc(9.6px * var(--scale));
+  --cell-h: calc(16px * var(--scale));
+  --cols: 65;
+  --rows: 54;
+
+  /* sheet margins, inside the sheet, outside the character grid */
+  --margin-x: calc(var(--cell-w) * 4);
+  --margin-y: calc(var(--cell-h) * 3);
+
+  /* ink */
+  --ink: #1c1f2a;
+  --ink-faint: #3a4055;
+  --ink-red: #8f2b23;
+  --ink-bleed: rgba(28, 31, 42, 0.5);
+
+  /* paper */
+  --paper: #f4efe4;
+  --paper-shade: #efe7d6;
+  --paper-lit: #f8f3ea;
+
+  /* card stock, cooler and heavier than the sheet */
+  --card-stock: #e9e0c6;
+  --card-stock-lo: #ddd2b2;
+  --card-rule-blue: rgba(96, 122, 158, 0.34);
+  --card-rule-red: #a8382f;
+
+  /* desk and machine */
+  --desk: #241d18;
+  --desk-hi: #3a2f26;
+  --steel: #9aa0a6;
+  --steel-hi: #e4e8ec;
+  --steel-lo: #4a4f55;
+  --bakelite: #e8dcc2;
+  --rubber: #2b2b2e;
+
+  /* typeface, swapped by body[data-typeface] */
+  --face: "TT2020", "Courier Prime", "Courier New", monospace;
+
+  /* carriage transform, written by app.js on #sheet */
+  --sheet-x: 0px;
+  --sheet-y: 0px;
+
+  /* strike point, screen-fixed. app.js may retune these. */
+  --guide-x: 50%;
+  --guide-y: 64%;
+
+  /* rail key geometry */
+  --key-d: 62px;
+  --key-travel: 4px;
+  --key-slide: 3px;
+}
+
+body[data-typeface="tt2020"]        { --face: "TT2020", "Courier New", monospace; }
+body[data-typeface="courier-prime"] { --face: "Courier Prime", "Courier New", monospace; }
+body[data-typeface="special-elite"] { --face: "Special Elite", "Courier New", monospace; }
+body[data-typeface="cutive-mono"]   { --face: "Cutive Mono", "Courier New", monospace; }
+
+
+/* ------------------------------------------------------------
+   3. RESET / DESK
+   ------------------------------------------------------------ */
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  background-color: var(--desk);
+  /* desk: warm wood-ish falloff with a single key light from upper left */
+  background-image:
+    radial-gradient(120% 90% at 16% -10%, rgba(255, 240, 214, 0.16), rgba(255, 240, 214, 0) 58%),
+    radial-gradient(140% 120% at 50% 120%, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0) 60%),
+    linear-gradient(168deg, var(--desk-hi) 0%, var(--desk) 46%, #17120f 100%);
+  color: var(--ink);
+  font-family: var(--face);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(58, 64, 85, 0.22);
+  color: var(--ink);
+}
+
+#desk {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: hidden; /* clips every rail arm at the viewport edge */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#machine {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 24px;
+  max-width: 100%;
+}
+
+
+/* ------------------------------------------------------------
+   4. MACHINE CHROME
+   ------------------------------------------------------------ */
+
+#platen-assembly {
+  position: relative;
+  width: min(calc(100vw - 220px), calc(var(--cols) * var(--cell-w) + var(--margin-x) * 2 + 96px));
+  height: 58px;
+  z-index: 4;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.5));
+}
+
+/* The platen roller: hard rubber cylinder, key light from upper left */
+#platen {
+  position: absolute;
+  inset: 0 0 12px 0;
+  border-radius: 24px / 22px;
+  background:
+    linear-gradient(180deg,
+      rgba(255, 255, 255, 0.30) 0%,
+      rgba(255, 255, 255, 0.06) 16%,
+      rgba(0, 0, 0, 0.18) 46%,
+      rgba(0, 0, 0, 0.52) 82%,
+      rgba(0, 0, 0, 0.34) 100%),
+    linear-gradient(96deg, #4b4a4d 0%, #6a686c 12%, #3c3b3f 62%, #232326 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -6px 14px rgba(0, 0, 0, 0.6),
+    0 2px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* Platen end knobs */
+#platen::before,
+#platen::after {
+  content: "";
+  position: absolute;
+  top: -5px;
+  width: 34px;
+  height: calc(100% + 10px);
+  border-radius: 50% / 46%;
+  background:
+    radial-gradient(60% 50% at 34% 26%, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 62%),
+    linear-gradient(150deg, #7c7a80 0%, #46454a 55%, #232226 100%);
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.6);
+}
+#platen::before { left: -16px; }
+#platen::after  { right: -16px; }
+
+/* Paper bail bar with two rubber rollers, crossing in front of the sheet */
+#bail {
+  position: absolute;
+  left: 34px;
+  right: 34px;
+  bottom: -6px;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, var(--steel-hi) 0%, var(--steel) 34%, var(--steel-lo) 100%);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.22) inset,
+    0 6px 12px rgba(0, 0, 0, 0.45);
+  z-index: 6;
+}
+
+.bail-roller {
+  position: absolute;
+  top: 50%;
+  width: 40px;
+  height: 20px;
+  border-radius: 10px / 9px;
+  transform: translateY(-50%);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0) 34%),
+    linear-gradient(180deg, #3a3a3d 0%, var(--rubber) 48%, #131315 100%);
+  box-shadow:
+    inset 0 -3px 6px rgba(0, 0, 0, 0.7),
+    0 3px 7px rgba(0, 0, 0, 0.5);
+}
+.bail-roller:nth-child(1) { left: 22%; }
+.bail-roller:nth-child(2) { right: 22%; }
+
+
+/* Carriage return lever, left of the platen */
+#carriage-lever {
+  position: absolute;
+  top: 6px;
+  left: -6px;
+  width: 96px;
+  height: 12px;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  border-radius: 6px;
+  transform-origin: 100% 50%;
+  transform: rotate(-9deg);
+  background: linear-gradient(180deg, var(--steel-hi) 0%, var(--steel) 40%, var(--steel-lo) 100%);
+  box-shadow: 0 4px 9px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: transform 120ms cubic-bezier(0.22, 0.9, 0.3, 1.2);
+  z-index: 7;
+}
+
+#carriage-lever::before {
+  /* the lever paddle */
+  content: "";
+  position: absolute;
+  left: -10px;
+  top: -7px;
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  background: radial-gradient(70% 60% at 34% 28%, #4a4441, #17130f 78%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 3px 6px rgba(0, 0, 0, 0.5);
+}
+
+#carriage-lever:hover { transform: rotate(-12deg); }
+#carriage-lever:active,
+#carriage-lever.is-thrown { transform: rotate(14deg); }
+#carriage-lever:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(28, 31, 42, 0.9), 0 0 0 5px rgba(224, 214, 190, 0.55);
+}
+
+
+/* ------------------------------------------------------------
+   5. SHEET VIEWPORT / PAPER
+   ------------------------------------------------------------ */
+
+#sheet-viewport {
+  position: relative;
+  width: min(calc(100vw - 260px), calc(var(--cols) * var(--cell-w) + var(--margin-x) * 2));
+  height: min(calc(100vh - 240px), calc(var(--rows) * var(--cell-h) + var(--margin-y) * 2));
+  overflow: hidden;            /* the sheet never shows a scrollbar */
+  scrollbar-width: none;
+  margin-top: -10px;
+  border-radius: 2px 2px 6px 6px;
+  background: #191410;
+  box-shadow:
+    0 30px 60px rgba(0, 0, 0, 0.55),
+    0 6px 18px rgba(0, 0, 0, 0.4);
+  z-index: 3;
+}
+
+#sheet-viewport::-webkit-scrollbar { width: 0; height: 0; }
+
+/* Curl: the sheet rolls over the platen, so the top of the opening is
+   compressed and shadowed. Fixed to the opening, not to the sheet. */
+#sheet-viewport::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 68px;
+  z-index: 8;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg,
+      rgba(24, 18, 12, 0.62) 0%,
+      rgba(41, 32, 22, 0.34) 26%,
+      rgba(70, 56, 38, 0.14) 58%,
+      rgba(0, 0, 0, 0) 100%);
+}
+
+/* Vignette plus contact shadow at the bottom of the opening. */
+#sheet-viewport::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 100% at 50% 46%, rgba(0, 0, 0, 0) 52%, rgba(38, 28, 16, 0.30) 100%),
+    linear-gradient(0deg, rgba(30, 22, 14, 0.34) 0%, rgba(0, 0, 0, 0) 16%);
+}
+
+#sheet {
+  position: relative;
+  width: calc(var(--cols) * var(--cell-w) + var(--margin-x) * 2);
+  height: calc(var(--rows) * var(--cell-h) + var(--margin-y) * 2);
+  transform: translate3d(var(--sheet-x), var(--sheet-y), 0);
+  will-change: transform;
+  background-color: var(--paper);
+  /* warm vertical gradient, cooler and lighter at the top where it
+     catches the key light, warmer and darker where it curves away */
+  background-image:
+    linear-gradient(180deg,
+      var(--paper-lit) 0%,
+      var(--paper) 38%,
+      var(--paper) 62%,
+      var(--paper-shade) 100%);
+  transition: transform 34ms cubic-bezier(0.16, 0.9, 0.28, 1.06);
+}
+
+/* Shudder on each strike. app.js adds .is-struck for ~60ms. */
+#sheet.is-struck { animation: sheet-shudder 60ms linear; }
+
+@keyframes sheet-shudder {
+  0%   { transform: translate3d(var(--sheet-x), var(--sheet-y), 0); }
+  35%  { transform: translate3d(calc(var(--sheet-x) + 0.5px), calc(var(--sheet-y) - 0.4px), 0); }
+  70%  { transform: translate3d(calc(var(--sheet-x) - 0.35px), calc(var(--sheet-y) + 0.3px), 0); }
+  100% { transform: translate3d(var(--sheet-x), var(--sheet-y), 0); }
+}
+
+/* Fibre grain. Two turbulence layers: fine speckle plus a stretched
+   layer that reads as paper fibre running across the sheet. */
+#paper-grain {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  opacity: 0.42;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23f)' opacity='0.55'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.015 0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23g)' opacity='0.38'/%3E%3C/svg%3E");
+  background-size: 180px 180px, 240px 240px;
+}
+
+/* Single soft key light from the upper left, laid over the paper. */
+#sheet::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    radial-gradient(78% 58% at 16% 6%, rgba(255, 252, 240, 0.55), rgba(255, 252, 240, 0) 62%),
+    linear-gradient(112deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 42%);
+  mix-blend-mode: soft-light;
+}
+
+/* Edge vignette on the sheet itself, plus faint deckle darkening. */
+#sheet::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  background: radial-gradient(116% 96% at 42% 34%,
+    rgba(0, 0, 0, 0) 58%,
+    rgba(96, 76, 44, 0.10) 84%,
+    rgba(72, 56, 32, 0.20) 100%);
+}
+
+/* The card dims the sheet very slightly while open. No modal scrim. */
+#sheet-viewport { transition: filter 220ms ease-out; }
+body:has(#settings-card.is-open) #sheet-viewport { filter: brightness(0.965) saturate(0.99); }
+
+
+/* ------------------------------------------------------------
+   6. INK IMPRESSIONS AND CORRECTION PATCHES
+   ------------------------------------------------------------ */
+
+#patch-layer,
+#ink-layer {
+  position: absolute;
+  left: var(--margin-x);
+  top: var(--margin-y);
+  width: calc(var(--cols) * var(--cell-w));
+  height: calc(var(--rows) * var(--cell-h));
+  pointer-events: none;
+}
+
+#patch-layer { z-index: 3; }
+#ink-layer   { z-index: 4; }
+
+.impression {
+  position: absolute;
+  left: calc(var(--col) * var(--cell-w));
+  top: calc(var(--row) * var(--cell-h));
+  width: var(--cell-w);
+  height: var(--cell-h);
+  display: block;
+  font-family: var(--face);
+  font-size: calc(var(--cell-h) * 0.72);
+  line-height: var(--cell-h);
+  text-align: center;
+  white-space: pre;
+  font-kerning: none;
+  font-variant-ligatures: none;
+  letter-spacing: 0;
+
+  /* faint strikes desaturate toward the cool grey-blue, not toward grey */
+  color: var(--ink);
+  color: color-mix(in srgb, var(--ink-faint), var(--ink) calc(var(--alpha, 1) * 100%));
+
+  opacity: var(--alpha, 1);
+  /* bleed into the paper fibre - a shadow, never a per-element filter */
+  text-shadow: 0 0 var(--blur, 0.4px) var(--ink-bleed);
+
+  /* GPU-cheap jitter: one composited translate plus a rotation */
+  transform: translate3d(var(--dx, 0px), var(--dy, 0px), 0) rotate(var(--rot, 0deg));
+  transform-origin: 50% 58%;
+  backface-visibility: hidden;
+}
+
+.impression.red { color: var(--ink-red); }
+
+/* Correction patch: opaque paper-toned cover, soft irregular edge, a
+   shade off the surrounding sheet so it stays legible as a correction. */
+.correction-patch {
+  position: absolute;
+  left: calc(var(--col) * var(--cell-w) - 1px);
+  top: calc(var(--row) * var(--cell-h) - 1px);
+  width: calc(var(--cell-w) + 2px);
+  height: calc(var(--cell-h) + 2px);
+  border-radius: 42% 55% 46% 58% / 52% 44% 58% 46%;
+  background:
+    radial-gradient(70% 62% at 38% 32%, #fbf7ee 0%, #f6f1e5 58%, #f1ead9 100%);
+  box-shadow:
+    0 0 2px rgba(190, 178, 150, 0.55),
+    inset 0 0 3px rgba(255, 255, 255, 0.7);
+  opacity: 0.97;
+}
+
+
+/* ------------------------------------------------------------
+   7. TYPE GUIDE
+   A metal slot at the fixed strike point. Never a text caret.
+   ------------------------------------------------------------ */
+
+#type-guide {
+  position: absolute;
+  left: var(--guide-x);
+  top: var(--guide-y);
+  width: calc(var(--cell-w) + 12px);
+  height: calc(var(--cell-h) + 10px);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 10;
+  border-radius: 3px;
+  /* two chrome jaws with a dark slot between them */
+  background:
+    linear-gradient(180deg, rgba(228, 232, 236, 0.92) 0%, rgba(140, 146, 152, 0.9) 44%, rgba(64, 68, 74, 0.92) 100%);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.4);
+  -webkit-mask-image:
+    linear-gradient(#000 0 0),
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  -webkit-mask-size: 100% 100%, calc(100% - 8px) calc(100% - 9px);
+          mask-size: 100% 100%, calc(100% - 8px) calc(100% - 9px);
+  -webkit-mask-position: 0 0, 4px 4px;
+          mask-position: 0 0, 4px 4px;
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+  mask-image:
+    linear-gradient(#000 0 0),
+    linear-gradient(#000 0 0);
+}
+
+/* The only blinking element in the app: a thin ink underscore
+   sitting inside the slot. */
+#type-guide::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 5px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ink);
+  opacity: 0.85;
+  animation: guide-blink 1.1s steps(1, end) infinite;
+}
+
+@keyframes guide-blink {
+  0%, 55%   { opacity: 0.85; }
+  56%, 100% { opacity: 0.12; }
+}
+
+
+/* ------------------------------------------------------------
+   8. BUTTON RAIL
+   Keys on slim metal arms entering from off the viewport edge.
+   --arm-rot points outward from the cap toward off-canvas, so the
+   press travel is always along the arm axis.
+   ------------------------------------------------------------ */
+
+#rail {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.rail-key {
+  position: absolute;
+  width: var(--key-d);
+  height: calc(var(--key-d) * 0.92);
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 130ms cubic-bezier(0.24, 0.85, 0.32, 1);
+  /* hover slides the whole assembly inward along the arm axis */
+  transform: rotate(var(--arm-rot)) translateX(0px) rotate(calc(-1 * var(--arm-rot)));
+}
+
+.rail-key:hover,
+.rail-key:focus-visible {
+  transform: rotate(var(--arm-rot)) translateX(calc(-1 * var(--key-slide))) rotate(calc(-1 * var(--arm-rot)));
+}
+
+/* --- the arm ------------------------------------------------ */
+
+.arm {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 140vmax;              /* always long enough to leave the viewport */
+  height: 13px;
+  margin-top: -6.5px;
+  transform-origin: 0 50%;
+  transform: rotate(var(--arm-rot));
+  pointer-events: none;
+  z-index: 1;
+  border-radius: 0 3px 3px 0;
+  background:
+    linear-gradient(180deg,
+      rgba(255, 255, 255, 0.72) 0%,
+      rgba(216, 222, 228, 0.95) 14%,
+      rgba(150, 157, 165, 1) 40%,
+      rgba(86, 91, 98, 1) 72%,
+      rgba(38, 41, 46, 1) 100%);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.25) inset,
+    0 10px 16px rgba(0, 0, 0, 0.45),
+    0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* brushed-steel striation plus a specular line matching the key light */
+.arm::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0.35;
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.10) 0px,
+    rgba(255, 255, 255, 0) 2px,
+    rgba(0, 0, 0, 0.09) 3px,
+    rgba(0, 0, 0, 0) 5px);
+}
+
+.arm::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 2px;
+  height: 2px;
+  border-radius: 1px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.12));
+}
+
+/* --- the ring (chrome bezel) -------------------------------- */
+
+.ring {
+  position: absolute;
+  inset: -4px;
+  z-index: 2;
+  border-radius: 50%;
+  pointer-events: none;
+  background:
+    conic-gradient(from 210deg,
+      #f4f7fa 0deg, #b9c0c7 42deg, #6d747c 96deg,
+      #dfe5ea 158deg, #8b9299 214deg, #f1f4f7 272deg,
+      #79808a 322deg, #f4f7fa 360deg);
+  box-shadow:
+    0 6px 14px rgba(0, 0, 0, 0.5),
+    inset 0 1px 1px rgba(255, 255, 255, 0.8),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.45);
+  transition: transform 70ms cubic-bezier(0.3, 0.7, 0.4, 1), box-shadow 130ms ease-out;
+}
+
+/* --- the cap (dished bakelite) ------------------------------ */
+
+.cap {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  pointer-events: none;
+  font-family: var(--face);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-variant: small-caps;
+  text-align: center;
+  line-height: 1.05;
+  padding: 0 5px;
+  color: var(--ink);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+  background:
+    /* worn patch where a thumb lands */
+    radial-gradient(38% 34% at 50% 54%, rgba(255, 253, 246, 0.55), rgba(255, 253, 246, 0) 72%),
+    /* dish */
+    radial-gradient(120% 120% at 50% 118%, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0) 46%),
+    radial-gradient(90% 80% at 34% 20%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 58%),
+    linear-gradient(168deg, var(--bakelite) 0%, #ded0b2 52%, #c3b391 100%);
+  box-shadow:
+    inset 0 -3px 6px rgba(120, 100, 66, 0.45),
+    inset 0 3px 5px rgba(255, 255, 255, 0.55),
+    0 2px 4px rgba(0, 0, 0, 0.35);
+  transition: transform 70ms cubic-bezier(0.3, 0.7, 0.4, 1), filter 130ms ease-out;
+}
+
+.rail-key:hover .cap { filter: brightness(1.06); }
+
+/* Press: the cap and ring travel outward ALONG the arm axis. */
+.rail-key:active .cap,
+.rail-key:active .ring,
+.rail-key[aria-pressed="true"] .cap,
+.rail-key[aria-pressed="true"] .ring {
+  transform: rotate(var(--arm-rot)) translateX(var(--key-travel)) rotate(calc(-1 * var(--arm-rot)));
+}
+
+.rail-key:active .cap,
+.rail-key[aria-pressed="true"] .cap {
+  box-shadow:
+    inset 0 -1px 3px rgba(120, 100, 66, 0.55),
+    inset 0 2px 7px rgba(90, 74, 48, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.rail-key:active .ring,
+.rail-key[aria-pressed="true"] .ring {
+  box-shadow:
+    0 3px 7px rgba(0, 0, 0, 0.55),
+    inset 0 1px 1px rgba(255, 255, 255, 0.6),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.55);
+}
+
+/* Latched keys spring back a touch slower than a tap. */
+.rail-key[aria-pressed="true"] .cap,
+.rail-key[aria-pressed="true"] .ring { transition-duration: 110ms; }
+
+/* Realism Mode must be readable without opening the card. The Settings key
+   latches down and carries an inked dot while the mode is on, the way a
+   shift-lock key stays depressed. */
+body[data-realism="on"] .rail-key[data-action="settings"] .cap,
+body[data-realism="on"] .rail-key[data-action="settings"] .ring {
+  transform: rotate(var(--arm-rot)) translateX(var(--key-travel)) rotate(calc(-1 * var(--arm-rot)));
+  transition-duration: 110ms;
+}
+
+body[data-realism="on"] .rail-key[data-action="settings"] .cap {
+  box-shadow:
+    inset 0 -1px 3px rgba(120, 100, 66, 0.55),
+    inset 0 2px 7px rgba(90, 74, 48, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+body[data-realism="on"] .rail-key[data-action="settings"] .cap::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  margin-left: -2.5px;
+  border-radius: 50%;
+  background: var(--ink);
+  opacity: 0.72;
+  box-shadow: 0 0 2px rgba(28, 31, 42, 0.5);
+}
+
+/* Release overshoot */
+.rail-key .cap,
+.rail-key .ring { transition-timing-function: cubic-bezier(0.2, 1.5, 0.4, 1); }
+
+/* Keyboard focus draws an ink ring on the key ring itself. */
+.rail-key:focus { outline: none; }
+.rail-key:focus-visible .ring {
+  box-shadow:
+    0 0 0 3px var(--ink),
+    0 0 0 5px rgba(232, 220, 194, 0.55),
+    0 6px 14px rgba(0, 0, 0, 0.5),
+    inset 0 1px 1px rgba(255, 255, 255, 0.8);
+}
+
+/* Save / Copy confirmation: an inked stamp on the cap that fades. */
+.rail-key.is-stamped .cap::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  background: no-repeat center/contain
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 13.4 L9.4 19 L20 5.6' fill='none' stroke='%231c1f2a' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round' opacity='0.85'/%3E%3C/svg%3E");
+  animation: stamp-fade 1100ms ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes stamp-fade {
+  0%   { opacity: 0; transform: scale(1.35) rotate(-6deg); }
+  14%  { opacity: 1; transform: scale(1) rotate(-4deg); }
+  62%  { opacity: 0.9; }
+  100% { opacity: 0; }
+}
+
+/* --- placement: staggered, diverging, never parallel -------- */
+
+.rail-key[data-action="settings"] { --arm-rot: 190deg; top: 24%;  left: 26px; }
+.rail-key[data-action="save"]     { --arm-rot: 171deg; top: 60%;  left: 44px; }
+.rail-key[data-action="copy"]     { --arm-rot: -8deg;  top: 33%;  right: 34px; }
+.rail-key[data-action="erase"]    { --arm-rot: 9deg;   top: 69%;  right: 22px; }
+
+/* right-hand arms grow from the cap toward the right edge */
+.rail-key[data-side="right"] .arm { border-radius: 3px 0 0 3px; }
+
+/* oxblood cap for the destructive key */
+.rail-key[data-action="erase"] .cap {
+  color: #f3e7d8;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+  background:
+    radial-gradient(38% 34% at 50% 54%, rgba(255, 220, 200, 0.22), rgba(255, 220, 200, 0) 72%),
+    radial-gradient(120% 120% at 50% 118%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 46%),
+    radial-gradient(90% 80% at 34% 20%, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0) 58%),
+    linear-gradient(168deg, #7d332c 0%, #5e241f 54%, #401713 100%);
+  box-shadow:
+    inset 0 -3px 6px rgba(30, 8, 6, 0.6),
+    inset 0 3px 5px rgba(255, 190, 170, 0.28),
+    0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+
+/* ------------------------------------------------------------
+   9. SETTINGS CARD
+   A ruled buff notecard tossed onto the desk. No scrim.
+   ------------------------------------------------------------ */
+
+[hidden] { display: none !important; }
+
+#settings-card {
+  position: absolute;
+  top: 46px;
+  right: 6vw;
+  width: 340px;
+  max-width: calc(100vw - 48px);
+  padding: 26px 24px 22px;
+  z-index: 40;
+  color: var(--ink);
+  font-family: var(--face);
+  border-radius: 7px;
+  transform-origin: 80% 0%;
+
+  /* heavier, cooler stock than the sheet, with faint blue rules */
+  background-color: var(--card-stock);
+  background-image:
+    /* thumb smudge */
+    radial-gradient(26px 20px at 86% 88%, rgba(84, 72, 52, 0.16), rgba(84, 72, 52, 0) 70%),
+    /* faint blue rules */
+    repeating-linear-gradient(180deg,
+      rgba(0, 0, 0, 0) 0px,
+      rgba(0, 0, 0, 0) 25px,
+      var(--card-rule-blue) 25px,
+      var(--card-rule-blue) 26px),
+    /* stock gradient, cooler than the sheet */
+    linear-gradient(163deg, #efe7cf 0%, var(--card-stock) 46%, var(--card-stock-lo) 100%);
+  background-position: 0 0, 0 46px, 0 0;
+  box-shadow:
+    0 26px 44px rgba(0, 0, 0, 0.42),
+    0 8px 14px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+
+  animation: card-exit 210ms cubic-bezier(0.4, 0, 0.9, 0.4) forwards;
+}
+
+/* card stock grain, coarser than the sheet's */
+#settings-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.30;
+  mix-blend-mode: multiply;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23c)' opacity='0.6'/%3E%3C/svg%3E"),
+    /* coffee ring, upper left */
+    radial-gradient(circle at 22% 16%, rgba(0, 0, 0, 0) 26px, rgba(122, 84, 40, 0.20) 27px, rgba(122, 84, 40, 0.26) 30px, rgba(122, 84, 40, 0) 32px);
+}
+
+/* dog-eared bottom right corner */
+#settings-card::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 34px;
+  height: 34px;
+  pointer-events: none;
+  background-image:
+    /* the folded flap, lit from upper left */
+    linear-gradient(135deg, rgba(0, 0, 0, 0) 49%, #efe9d6 50%, #cfc4a4 100%),
+    /* the cut corner, showing the desk through */
+    linear-gradient(315deg, rgba(24, 19, 14, 0.92) 49.6%, rgba(0, 0, 0, 0) 50%);
+  filter: drop-shadow(-2px -2px 3px rgba(0, 0, 0, 0.22));
+  border-bottom-right-radius: 7px;
+}
+
+#settings-card.is-open {
+  animation: card-enter 300ms cubic-bezier(0.16, 0.84, 0.3, 1.08) forwards;
+}
+
+@keyframes card-enter {
+  0%   { opacity: 0; transform: translate(62px, -72px) rotate(9deg) scale(0.97); }
+  62%  { opacity: 1; transform: translate(-7px, 6px) rotate(-5.4deg) scale(1.012); }
+  82%  { transform: translate(2px, -2px) rotate(-3.4deg) scale(0.998); }
+  100% { opacity: 1; transform: translate(0, 0) rotate(-4.2deg) scale(1); }
+}
+
+@keyframes card-exit {
+  0%   { opacity: 1; transform: translate(0, 0) rotate(-4.2deg) scale(1); }
+  100% { opacity: 0; transform: translate(54px, -64px) rotate(7deg) scale(0.97); }
+}
+
+/* red header rule near the top */
+.card-rule {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 44px;
+  height: 2px;
+  background: var(--card-rule-red);
+  opacity: 0.72;
+  box-shadow: 0 1px 0 rgba(168, 56, 47, 0.25);
+}
+
+.card-title {
+  position: relative;
+  z-index: 2;
+  margin: 0 0 26px;
+  font-family: var(--face);
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.88;
+}
+
+.setting {
+  position: relative;
+  z-index: 2;
+  margin: 0 0 20px;
+}
+
+.setting:last-of-type { margin-bottom: 6px; }
+
+.setting-label {
+  display: block;
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.72;
+  margin-bottom: 7px;
+}
+
+.setting-note {
+  margin: 5px 0 0 44px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--ink-faint);
+  opacity: 0.82;
+  max-width: 30ch;
+}
+
+/* the stamped X in the corner */
+.card-close {
+  position: absolute;
+  z-index: 3;
+  top: 10px;
+  right: 12px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  background: none;
+  font-family: var(--face);
+  font-size: 15px;
+  line-height: 1;
+  color: var(--card-rule-red);
+  opacity: 0.72;
+  transform: rotate(-7deg);
+  transition: opacity 120ms ease-out, transform 120ms ease-out;
+}
+
+.card-close:hover { opacity: 1; transform: rotate(-7deg) scale(1.08); }
+.card-close:focus-visible {
+  outline: none;
+  opacity: 1;
+  box-shadow: 0 0 0 2px var(--ink);
+  border-radius: 3px;
+}
+
+
+/* ------------------------------------------------------------
+   10. CARD CONTROLS
+   Nothing may read as an OS widget.
+   ------------------------------------------------------------ */
+
+/* --- metal lever (checkbox) --------------------------------- */
+
+.lever {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.lever input[type="checkbox"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  margin: 0;
+  pointer-events: none;
+}
+
+/* slotted plate the lever swings in */
+.lever-art {
+  position: relative;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 34px;
+  border-radius: 4px;
+  background:
+    linear-gradient(180deg, #cdd2d7 0%, #9ba1a8 42%, #6d737a 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.35),
+    0 2px 4px rgba(0, 0, 0, 0.28);
+}
+
+/* the slot */
+.lever-art::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 6px;
+  width: 7px;
+  height: 22px;
+  margin-left: -3.5px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #2a2c30, #15161a);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+/* the lever itself, thrown up when off, down when on */
+.lever-art::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 6px;
+  width: 13px;
+  height: 13px;
+  margin-left: -6.5px;
+  border-radius: 3px;
+  background:
+    radial-gradient(70% 60% at 34% 26%, #fbfdff 0%, #c6ccd3 44%, #7f858c 100%);
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.45), inset 0 -1px 1px rgba(0, 0, 0, 0.3);
+  transition: transform 150ms cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.lever input:checked ~ .lever-art::after { transform: translateY(15px); }
+
+.lever input:checked ~ .lever-art {
+  background: linear-gradient(180deg, #b9c0c6 0%, #878e95 42%, #565c63 100%);
+}
+
+.lever input:focus-visible ~ .lever-art {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--ink),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.lever-label {
+  font-size: 12.5px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+/* --- select on card stock with an ink chevron --------------- */
+
+#opt-typeface {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  padding: 8px 34px 8px 11px;
+  font-family: var(--face);
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+  border: 1px solid rgba(120, 104, 72, 0.55);
+  border-radius: 3px;
+  background-color: rgba(255, 252, 240, 0.5);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='10'%3E%3Cpath d='M1.6 2 L7.5 8 L13.4 2' fill='none' stroke='%231c1f2a' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' opacity='0.85'/%3E%3C/svg%3E"),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.35), rgba(0, 0, 0, 0.04));
+  background-repeat: no-repeat, no-repeat;
+  background-position: right 11px center, 0 0;
+  background-size: 15px 10px, 100% 100%;
+  box-shadow: inset 0 1px 2px rgba(120, 104, 72, 0.22);
+}
+
+#opt-typeface:focus-visible {
+  outline: none;
+  border-color: var(--ink);
+  box-shadow: 0 0 0 2px rgba(28, 31, 42, 0.75);
+}
+
+#opt-typeface option {
+  background: var(--card-stock);
+  color: var(--ink);
+}
+#opt-typeface option[value="tt2020"]        { font-family: "TT2020", monospace; }
+#opt-typeface option[value="courier-prime"] { font-family: "Courier Prime", monospace; }
+#opt-typeface option[value="special-elite"] { font-family: "Special Elite", monospace; }
+#opt-typeface option[value="cutive-mono"]   { font-family: "Cutive Mono", monospace; }
+
+/* --- brass thumbwheel in a slotted track (volume) ----------- */
+
+.thumbwheel {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 26px;
+  margin: 14px 0 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.thumbwheel:focus { outline: none; }
+
+/* WebKit track */
+.thumbwheel::-webkit-slider-runnable-track {
+  height: 10px;
+  border-radius: 5px;
+  background:
+    linear-gradient(180deg, #2b2c30 0%, #17181b 60%, #35373c 100%);
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.8),
+    0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+/* WebKit thumb: a knurled brass wheel */
+.thumbwheel::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 26px;
+  margin-top: -8px;
+  border-radius: 5px;
+  background-color: #b7913f;
+  background-image:
+    repeating-linear-gradient(90deg,
+      rgba(255, 240, 190, 0.55) 0px,
+      rgba(255, 240, 190, 0) 1px,
+      rgba(60, 40, 8, 0.4) 2px,
+      rgba(60, 40, 8, 0) 3px),
+    linear-gradient(180deg, #f0d99a 0%, #c69f49 38%, #8a6a26 78%, #d8bf7c 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 250, 225, 0.8),
+    inset 0 -2px 3px rgba(50, 32, 4, 0.55),
+    0 3px 6px rgba(0, 0, 0, 0.45);
+}
+
+/* Firefox track */
+.thumbwheel::-moz-range-track {
+  height: 10px;
+  border-radius: 5px;
+  background: linear-gradient(180deg, #2b2c30 0%, #17181b 60%, #35373c 100%);
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.8),
+    0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+/* Firefox thumb */
+.thumbwheel::-moz-range-thumb {
+  width: 22px;
+  height: 26px;
+  border: 0;
+  border-radius: 5px;
+  background-color: #b7913f;
+  background-image:
+    repeating-linear-gradient(90deg,
+      rgba(255, 240, 190, 0.55) 0px,
+      rgba(255, 240, 190, 0) 1px,
+      rgba(60, 40, 8, 0.4) 2px,
+      rgba(60, 40, 8, 0) 3px),
+    linear-gradient(180deg, #f0d99a 0%, #c69f49 38%, #8a6a26 78%, #d8bf7c 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 250, 225, 0.8),
+    inset 0 -2px 3px rgba(50, 32, 4, 0.55),
+    0 3px 6px rgba(0, 0, 0, 0.45);
+}
+
+.thumbwheel:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 2px var(--ink), 0 3px 6px rgba(0, 0, 0, 0.45); }
+.thumbwheel:focus-visible::-moz-range-thumb     { box-shadow: 0 0 0 2px var(--ink), 0 3px 6px rgba(0, 0, 0, 0.45); }
+
+/* Sound off greys the wheel out */
+body[data-sound="off"] .thumbwheel { opacity: 0.42; }
+
+/* --- ribbon spool wear indicator ---------------------------- */
+
+.spool {
+  position: relative;
+  width: 100%;
+  height: 12px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(120, 104, 72, 0.20), rgba(120, 104, 72, 0.10));
+  box-shadow: inset 0 1px 2px rgba(90, 76, 48, 0.35);
+  overflow: hidden;
+}
+
+/* the inked portion left on the spool, driven by --wear (0-1) */
+.spool::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc((1 - var(--wear, 0)) * 100%);
+  border-radius: 6px;
+  background: linear-gradient(180deg, var(--ink-faint), var(--ink));
+  transition: width 260ms ease-out;
+}
+
+/* spool ticks */
+.spool::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(90deg,
+    rgba(255, 252, 240, 0.35) 0px,
+    rgba(255, 252, 240, 0) 1px,
+    rgba(255, 252, 240, 0) 11px,
+    rgba(255, 252, 240, 0.35) 12px);
+  opacity: 0.5;
+}
+
+body[data-ribbon="worn"] .spool::before { filter: saturate(0.6) brightness(1.35); }
+
+/* --- small key-style controls on card stock ----------------- */
+
+.card-key {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 74px;
+  padding: 8px 14px;
+  border: 0;
+  cursor: pointer;
+  border-radius: 16px / 15px;
+  font-family: var(--face);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+  background:
+    radial-gradient(60% 50% at 50% 116%, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0) 52%),
+    radial-gradient(80% 70% at 32% 16%, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 60%),
+    linear-gradient(168deg, var(--bakelite) 0%, #ded0b2 54%, #c3b391 100%);
+  box-shadow:
+    0 0 0 2px rgba(160, 168, 176, 0.9),
+    inset 0 -3px 5px rgba(120, 100, 66, 0.45),
+    inset 0 3px 4px rgba(255, 255, 255, 0.5),
+    0 4px 8px rgba(0, 0, 0, 0.32);
+  transition: transform 70ms cubic-bezier(0.2, 1.4, 0.4, 1), box-shadow 120ms ease-out, filter 120ms ease-out;
+}
+
+.card-key:hover { filter: brightness(1.05); }
+
+.card-key:active {
+  transform: translateY(2px);
+  box-shadow:
+    0 0 0 2px rgba(140, 148, 156, 0.9),
+    inset 0 -1px 3px rgba(120, 100, 66, 0.5),
+    inset 0 2px 6px rgba(90, 74, 48, 0.4),
+    0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.card-key:focus { outline: none; }
+.card-key:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--ink),
+    0 0 0 4px rgba(232, 220, 194, 0.6),
+    inset 0 -3px 5px rgba(120, 100, 66, 0.45),
+    0 4px 8px rgba(0, 0, 0, 0.32);
+}
+
+
+/* ------------------------------------------------------------
+   11. ERASE CONFIRMATION - carbon copy slip
+   ------------------------------------------------------------ */
+
+#erase-confirm {
+  position: absolute;
+  z-index: 50;
+  left: 50%;
+  top: 40%;
+  width: 330px;
+  max-width: calc(100vw - 48px);
+  padding: 22px 22px 18px;
+  transform: translate(-50%, -50%) rotate(-1.6deg);
+  border-radius: 3px;
+  font-family: var(--face);
+  color: #2b2434;
+
+  /* semi-transparent grey-purple carbon stock */
+  background-color: rgba(150, 140, 160, 0.62);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='k'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23k)' opacity='0.45'/%3E%3C/svg%3E"),
+    linear-gradient(158deg, rgba(190, 182, 200, 0.55) 0%, rgba(132, 122, 146, 0.55) 62%, rgba(108, 99, 124, 0.6) 100%);
+  box-shadow:
+    0 22px 40px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  animation: carbon-in 240ms cubic-bezier(0.16, 0.84, 0.3, 1.06);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+@keyframes carbon-in {
+  0%   { opacity: 0; transform: translate(-50%, calc(-50% - 26px)) rotate(-4deg); }
+  70%  { opacity: 1; transform: translate(-50%, calc(-50% + 3px)) rotate(-1deg); }
+  100% { opacity: 1; transform: translate(-50%, -50%) rotate(-1.6deg); }
+}
+
+.carbon-text {
+  flex: 1 0 100%;
+  margin: 0 0 6px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #241d2e;
+  text-shadow: 0 0 0.5px rgba(36, 29, 46, 0.5);
+}
+
+#erase-confirm .card-key { min-width: 66px; }
+
+#erase-confirm .card-key,
+#erase-yes { color: var(--ink); }
+
+#erase-yes {
+  background:
+    radial-gradient(60% 50% at 50% 116%, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 52%),
+    radial-gradient(80% 70% at 32% 16%, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0) 60%),
+    linear-gradient(168deg, #7d332c 0%, #5e241f 54%, #401713 100%);
+  color: #f3e7d8;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+}
+
+
+/* ------------------------------------------------------------
+   12. REDUCED MOTION
+   Strip shudder, overshoot and sweep. Ink variation stays - it is
+   not motion.
+   ------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  #sheet {
+    transition: none;
+    animation: none !important;
+  }
+
+  #sheet.is-struck { animation: none; }
+
+  #type-guide::after { animation: none; opacity: 0.85; }
+
+  .rail-key,
+  .rail-key .cap,
+  .rail-key .ring,
+  .card-key,
+  .lever-art::after,
+  #carriage-lever,
+  .spool::before {
+    transition-duration: 1ms;
+    transition-timing-function: linear;
+  }
+
+  #settings-card,
+  #settings-card.is-open {
+    animation: none;
+    opacity: 1;
+    transform: rotate(-4.2deg);
+  }
+
+  #erase-confirm { animation: none; }
+
+  .rail-key.is-stamped .cap::after { animation: stamp-hold 900ms linear forwards; }
+
+  @keyframes stamp-hold {
+    0%, 80% { opacity: 1; }
+    100%    { opacity: 0; }
+  }
+}
+
+
+/* ------------------------------------------------------------
+   13. RESPONSIVE
+   Narrow viewports: the rail folds to the bottom edge, arms
+   reaching up from below.
+   ------------------------------------------------------------ */
+
+@media (max-width: 1180px) {
+  :root { --scale: 1.6; }
+  #sheet-viewport {
+    width: min(calc(100vw - 180px), calc(var(--cols) * var(--cell-w) + var(--margin-x) * 2));
+  }
+  #platen-assembly {
+    width: min(calc(100vw - 150px), calc(var(--cols) * var(--cell-w) + var(--margin-x) * 2 + 96px));
+  }
+}
+
+@media (max-width: 900px), (max-height: 620px) {
+  :root {
+    --scale: 1.25;
+    --key-d: 54px;
+  }
+
+  #machine { padding: 0 10px 130px; }
+
+  #sheet-viewport {
+    width: calc(100vw - 32px);
+    height: min(calc(100vh - 260px), calc(var(--rows) * var(--cell-h) + var(--margin-y) * 2));
+  }
+
+  #platen-assembly { width: calc(100vw - 20px); }
+
+  /* arms now enter from the bottom edge and reach up */
+  .rail-key {
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: 34px;
+  }
+
+  .rail-key[data-action="settings"] { --arm-rot: 99deg; left: 9% !important; bottom: 40px; }
+  .rail-key[data-action="save"]     { --arm-rot: 93deg; left: 32% !important; bottom: 26px; }
+  .rail-key[data-action="copy"]     { --arm-rot: 87deg; left: 55% !important; bottom: 38px; }
+  .rail-key[data-action="erase"]    { --arm-rot: 80deg; left: 78% !important; bottom: 24px; }
+
+  .arm { border-radius: 0 3px 3px 0 !important; }
+
+  #settings-card {
+    top: auto;
+    bottom: 150px;
+    right: 50%;
+    transform-origin: 50% 100%;
+    margin-right: -170px;
+  }
+
+  @media (max-width: 420px) {
+    #settings-card { right: 16px; margin-right: 0; width: calc(100vw - 32px); }
+  }
+}
+
+@media (max-height: 560px) {
+  #machine { padding-bottom: 110px; }
+  #sheet-viewport { height: calc(100vh - 210px); }
+}
