@@ -283,64 +283,261 @@ function createAudioEngine() {
 
   // ---- event synthesis -----------------------------------------------------
 
-  /* Keystroke family. Three layers: key-down click, typebar hitting the
-     platen (the body), faint mechanical return. `weight` shifts the whole
-     thing darker and heavier for space and rail keys.                     */
+/* ===========================================================================
+ * keystroke-v2 - replacement text for the keystroke family in app.js
+ *
+ * REPLACES (delete these from app.js, paste this block in their place):
+ *   - function synthKey(kind, wear)      [app.js, in the "event synthesis"
+ *                                         section, currently the first
+ *                                         function after ratchetClick]
+ *   That is the only existing function removed. synthKey keeps its exact
+ *   name and signature, so play()'s 'key' / 'space' / 'railKey' cases and
+ *   the rest of the engine need no edits.
+ *
+ * NEW HELPERS ADDED (all defined below, all used only by the keystroke
+ * family; insert them immediately before synthKey, i.e. after ratchetClick
+ * and before the "---- event synthesis ----" work that follows):
+ *   - function strikeModes(v, o)   modal resonator bank driven by one short
+ *                                  noise excitation. The core of the new
+ *                                  strike sound.
+ *   - function KEY_CLASSES         plain data object, no function calls at
+ *                                  definition time, safe to hoist anywhere
+ *                                  inside createAudioEngine().
+ *   - function keyVariant(kind)    per-class variant table lookup, wraps the
+ *                                  existing pickVariant().
+ *
+ * Uses only existing engine helpers: rnd, clamp, rateJitter, gainJitter,
+ * pickVariant, pickNoise, newVoice, trackSource, env, noiseBurst, partial,
+ * busWet/busDry via newVoice(end, dry), ctx. No master-chain or API change.
+ *
+ * SYNTHESIS MODEL
+ * A typebar strike is a struck object, not a filtered noise puff, so the
+ * body is now a modal resonator: one very short noise excitation (roughly 2
+ * to 5 ms, ramped rather than stepped) feeds a small bank of high-Q bandpass
+ * filters tuned to inharmonic ratios. Each mode has its own post-filter gain
+ * envelope, so the ring decays fast and unevenly the way struck steel does.
+ * Three events in sequence, timing first, timbre second:
+ *   1. key lever bottoming out                       t + 0
+ *   2. typebar into the platen, the loud part        t + 4 to 14 ms
+ *   3. typebar falling back onto the segment         t + 30 to 70 ms
+ * ========================================================================= */
+
+  /* One short noise excitation into a bank of inharmonic bandpass resonators.
+     This is the struck-metal core: the filters ring, the envelopes cut the
+     ring short, and the excitation is far too brief to read as noise.
+
+     o:
+       t        start time
+       f0       fundamental mode frequency (before jitter)
+       ratios   array of inharmonic mode ratios, low to high
+       gains    array of per-mode gain weights, same length as ratios
+       decays   array of per-mode decay lengths, same length as ratios
+       q        base Q for the fundamental; higher modes get more
+       gain      overall peak
+       atk      envelope attack (never 0, an instant step reads as a digital click)
+       lp       excitation brightness ceiling, also the wear/dullness control
+       exc      excitation length in seconds
+       rate     optional excitation playback rate scale                       */
+  function strikeModes(v, o) {
+    var t = o.t;
+
+    var src = ctx.createBufferSource();
+    src.buffer = pickNoise();
+    src.playbackRate.value = (o.rate || 1) * rateJitter();
+
+    // Excitation colouring. One filter shared by every mode, so dulling the
+    // strike for ribbon wear costs nothing.
+    var tone = ctx.createBiquadFilter();
+    tone.type = 'lowpass';
+    tone.frequency.value = clamp(o.lp || 5000, 200, 9000);
+    tone.Q.value = 0.5;
+
+    // The hammer contact itself: a couple of milliseconds, ramped up over
+    // half a millisecond so there is no step discontinuity.
+    var exLen = o.exc === undefined ? 0.003 : o.exc;
+    var exc = ctx.createGain();
+    exc.gain.setValueAtTime(0.0001, t);
+    exc.gain.linearRampToValueAtTime(1, t + 0.0006);
+    exc.gain.exponentialRampToValueAtTime(0.0001, t + 0.0006 + exLen);
+    exc.gain.setValueAtTime(0, t + 0.0006 + exLen + 0.001);
+
+    src.connect(tone);
+    tone.connect(exc);
+
+    // One gain jitter for the whole strike, so the mode balance stays intact.
+    var peak = o.gain * gainJitter();
+    var end = t;
+    for (var i = 0; i < o.ratios.length; i++) {
+      var f = clamp(o.f0 * o.ratios[i] * rnd(0.994, 1.006), 40, 8000);
+      var bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = f;
+      // Narrower bands higher up: short, bright, metallic partials.
+      bp.Q.value = clamp((o.q || 34) * (1 + i * 0.3), 1, 90);
+
+      var g = ctx.createGain();
+      var e = env(g.gain, t, peak * o.gains[i], o.atk || 0.0025, o.decays[i]);
+      if (e > end) end = e;
+
+      exc.connect(bp);
+      bp.connect(g);
+      g.connect(v.gain);
+    }
+
+    // The source has to outlive the ring: trackSource kills the voice gain
+    // once every source has ended, and the resonators are still sounding
+    // long after the excitation envelope has closed to zero.
+    var offset = Math.random() * 0.35;
+    try { src.start(t, offset, (end - t) + 0.02); } catch (e) { src.start(t); }
+    trackSource(v, src, end + 0.03);
+    return end;
+  }
+
+  /* Per key class geometry. Letter keys are a light typebar into a hard
+     rubber platen; space is a wide, slow lever with more mechanism rattle
+     and less platen ring; rail keys are a heavy function lever that thunks
+     and never reaches a platen at all. */
+  var KEY_CLASSES = {
+    letter: {
+      f0: [640, 980],            // frame ring, inside the 300 Hz to 1.2 kHz band
+      ratios: [1, 2.42, 4.17],   // inharmonic, plate-like, not a harmonic series
+      gains: [0.95, 0.5, 0.26],
+      decays: [0.055, 0.032, 0.018],
+      q: 34,
+      exc: 0.0028,
+      gain: 0.80,
+      lp: 4600,
+      atk: 0.0022,
+      delay: [0.004, 0.008],     // lever bottoming out to typebar contact
+      click: 0.055, clickF: 700, clickLp: 1300,
+      thump: [140, 185], thumpG: 0.10, thumpDur: 0.06,
+      ret: [0.032, 0.062],       // typebar falling back on the segment
+      retF: [1900, 2700], retG: 0.075,
+      rattle: 0
+    },
+    space: {
+      f0: [330, 430],
+      ratios: [1, 2.18, 3.61],
+      gains: [0.9, 0.38, 0.15],
+      decays: [0.095, 0.05, 0.026],
+      q: 26,
+      exc: 0.0045,
+      gain: 0.72,
+      lp: 2100,
+      atk: 0.0032,
+      delay: [0.009, 0.015],
+      click: 0.05, clickF: 520, clickLp: 1000,
+      thump: [96, 124], thumpG: 0.15, thumpDur: 0.1,
+      ret: [0.042, 0.078],
+      retF: [1150, 1650], retG: 0.05,
+      rattle: 2                  // wide bar, sloppy linkage
+    },
+    rail: {
+      f0: [240, 320],
+      ratios: [1, 2.05, 3.28],
+      gains: [0.85, 0.3, 0.1],
+      decays: [0.12, 0.055, 0.024],
+      q: 20,
+      exc: 0.005,
+      gain: 0.68,
+      lp: 1450,
+      atk: 0.0038,
+      delay: [0.010, 0.018],
+      click: 0.055, clickF: 430, clickLp: 900,
+      thump: [72, 92], thumpG: 0.18, thumpDur: 0.13,
+      ret: [0.055, 0.095],
+      retF: [780, 1080], retG: 0.045,
+      rattle: 1                  // a lever thunk, no typebar to fall back
+    }
+  };
+
+  /* Five non-repeating variants per key class. Each shifts the modal tuning,
+     the decay length, the brightness and the mode balance, so consecutive
+     strikes differ in shape and not just in level. */
+  var KEY_VARIANTS = [
+    { shift: 1.00, decay: 1.00, tone: 1.00, tilt: 1.00 },
+    { shift: 1.13, decay: 0.84, tone: 1.10, tilt: 1.18 },
+    { shift: 0.89, decay: 1.20, tone: 0.90, tilt: 0.84 },
+    { shift: 1.06, decay: 0.93, tone: 1.04, tilt: 0.92 },
+    { shift: 0.94, decay: 1.11, tone: 0.94, tilt: 1.09 }
+  ];
+
+  function keyVariant(kind) {
+    return KEY_VARIANTS[pickVariant('key-' + kind, KEY_VARIANTS.length)];
+  }
+
+  /* Keystroke family - 'letter', 'space', 'rail'.
+     Three events in quick succession: the key lever bottoming out, the
+     typebar striking the platen a few milliseconds later (the loud part,
+     a modal resonator bank), and the typebar dropping back onto the segment
+     30 to 70 ms later as a quieter, higher, metallic tick. */
   function synthKey(kind, wear) {
     var t = ctx.currentTime + 0.001;
     var w = clamp(wear || 0, 0, 1);
-
-    var cfg;
-    if (kind === 'space') {
-      // deeper and duller than a letter key
-      cfg = { body: rnd(430, 620), lp: 2100, dur: 0.075, gain: 0.30, thump: 96, click: 0.055 };
-    } else if (kind === 'rail') {
-      // heavier and duller still: a function key, not a typebar
-      cfg = { body: rnd(300, 430), lp: 1500, dur: 0.11, gain: 0.34, thump: 74, click: 0.06 };
-    } else {
-      cfg = { body: rnd(900, 1500), lp: 4200, dur: 0.05, gain: 0.26, click: 0.07, thump: 150 };
-    }
-
-    var variant = pickVariant('key-' + kind, 5);
-    // Each variant nudges the resonance, the decay and the filter slope so no
-    // two consecutive strikes are the same shape.
-    var vShift = [1.0, 1.14, 0.88, 1.06, 0.94][variant];
-    var vDecay = [1.0, 0.86, 1.18, 1.05, 0.92][variant];
+    var cfg = KEY_CLASSES[kind] || KEY_CLASSES.letter;
+    var vr = keyVariant(kind);
 
     // A worn ribbon dulls and quietens the strike slightly. Small effect.
     var wearGain = 1 - 0.14 * w;
     var wearTone = 1 - 0.16 * w;
 
-    var end = t + cfg.dur * vDecay + 0.16;
+    var f0 = rnd(cfg.f0[0], cfg.f0[1]) * vr.shift;
+    var lp = cfg.lp * vr.tone * wearTone;
+    var strikeAt = t + rnd(cfg.delay[0], cfg.delay[1]);
+    var retAt = t + rnd(cfg.ret[0], cfg.ret[1]);
+
+    // Mode gains tilted per variant: higher variants ring brighter up top.
+    var gains = [
+      cfg.gains[0],
+      cfg.gains[1] * vr.tilt,
+      cfg.gains[2] * vr.tilt * vr.tilt
+    ];
+    var decays = [
+      cfg.decays[0] * vr.decay,
+      cfg.decays[1] * vr.decay,
+      cfg.decays[2] * vr.decay
+    ];
+
+    var end = Math.max(strikeAt + decays[0] + 0.06, retAt + 0.09);
     var v = newVoice(end, false);
 
-    // 1. key-down click - soft, low, no high end at all
+    // 1. the key lever bottoming out. Soft, low, no high end at all, and it
+    //    only exists to give the strike a leading edge.
     noiseBurst(v, {
-      t: t, freq: 780 * vShift, type: 'lowpass', q: 0.8,
-      dur: 0.014, gain: cfg.click * wearGain, atk: 0.0025, lp: 1600
+      t: t, freq: cfg.clickF * vr.shift, type: 'lowpass', q: 0.8,
+      dur: 0.013, gain: cfg.click * wearGain, atk: 0.0025,
+      lp: cfg.clickLp * wearTone
     });
 
-    // 2. the body: filtered noise burst plus a short pitched platen resonance
-    noiseBurst(v, {
-      t: t + 0.006, freq: cfg.body * vShift, type: 'bandpass', q: 1.5,
-      dur: cfg.dur * vDecay, gain: cfg.gain * wearGain, atk: 0.003,
-      lp: cfg.lp * wearTone
-    });
-    partial(v, {
-      t: t + 0.006, freq: cfg.body * vShift * 1.9, type: 'triangle',
-      dur: cfg.dur * 0.8 * vDecay, gain: cfg.gain * 0.30 * wearGain,
-      lp: cfg.lp * wearTone
-    });
-    partial(v, {
-      t: t + 0.005, freq: cfg.thump, type: 'sine',
-      dur: cfg.dur * 1.5, gain: cfg.gain * 0.42 * wearGain, lp: 700
+    // 2. the typebar into the platen: the struck-object body.
+    strikeModes(v, {
+      t: strikeAt, f0: f0, ratios: cfg.ratios, gains: gains, decays: decays,
+      q: cfg.q, gain: cfg.gain * wearGain, atk: cfg.atk, lp: lp, exc: cfg.exc
     });
 
-    // 3. faint mechanical return of the typebar
-    var rt = t + rnd(0.052, 0.086);
-    noiseBurst(v, {
-      t: rt, freq: cfg.body * 0.55, type: 'bandpass', q: 2.2,
-      dur: 0.03, gain: cfg.gain * 0.16 * wearGain, atk: 0.004, lp: 1900
+    //    Low body under it: the frame and the desk taking the blow.
+    partial(v, {
+      t: strikeAt, freq: rnd(cfg.thump[0], cfg.thump[1]), type: 'sine',
+      dur: cfg.thumpDur, gain: cfg.thumpG * wearGain, atk: 0.004, lp: 620
+    });
+
+    //    Mechanism rattle for the sloppier levers (space bar, rail keys).
+    for (var i = 0; i < cfg.rattle; i++) {
+      noiseBurst(v, {
+        t: strikeAt + rnd(0.008, 0.034), freq: rnd(620, 1250),
+        type: 'bandpass', q: 3.5, dur: rnd(0.014, 0.026),
+        gain: 0.026 * wearGain, atk: 0.002, lp: 2400 * wearTone
+      });
+    }
+
+    // 3. the typebar falling back against the segment: quieter, higher, and
+    //    unmistakably metal on metal.
+    strikeModes(v, {
+      t: retAt, f0: rnd(cfg.retF[0], cfg.retF[1]) * vr.shift,
+      ratios: [1, 2.31], gains: [1, 0.4],
+      decays: [0.022 * vr.decay, 0.013 * vr.decay],
+      q: 26, gain: cfg.retG * wearGain, atk: 0.0018,
+      lp: 5200 * wearTone, exc: 0.0016
     });
   }
 
@@ -857,20 +1054,31 @@ function createAudioEngine() {
   var metrics = { cw: 19.2, ch: 32, mx: 0, my: 0, gx: 0, gy: 0 };
 
   function measure() {
-    var cs = getComputedStyle(sheet);
-    var rootCs = getComputedStyle(document.documentElement);
-    metrics.cw = parseFloat(rootCs.getPropertyValue('--cell-w')) || 19.2;
-    metrics.ch = parseFloat(rootCs.getPropertyValue('--cell-h')) || 32;
-    metrics.mx = parseFloat(rootCs.getPropertyValue('--margin-x')) || 0;
-    metrics.my = parseFloat(rootCs.getPropertyValue('--margin-y')) || 0;
-
-    // Where the type guide sits, in viewport-local coordinates.
+    // Do NOT read --cell-w and friends with getPropertyValue: custom
+    // properties come back as the unresolved token ("calc(9.6px * 2)"), so
+    // parseFloat silently returns the first number in the expression. Measure
+    // the laid-out geometry instead. #ink-layer is exactly the character grid,
+    // inset from the sheet by the paper margins, so it gives all four numbers.
+    var sheetRect = sheet.getBoundingClientRect();
+    var inkRect = inkLayer.getBoundingClientRect();
     var vp = $('#sheet-viewport').getBoundingClientRect();
     var g = $('#type-guide').getBoundingClientRect();
-    metrics.gx = (g.left + g.width / 2) - vp.left;
-    metrics.gy = (g.top + g.height / 2) - vp.top;
-    if (!isFinite(metrics.gx) || g.width === 0) { metrics.gx = vp.width * 0.5; metrics.gy = vp.height * 0.64; }
-    void cs;
+
+    if (inkRect.width > 0) {
+      metrics.cw = inkRect.width / COLS;
+      metrics.ch = inkRect.height / ROWS;
+      metrics.mx = inkRect.left - sheetRect.left;
+      metrics.my = inkRect.top - sheetRect.top;
+    }
+
+    // Where the type guide sits, in viewport-local coordinates.
+    if (g.width > 0) {
+      metrics.gx = (g.left + g.width / 2) - vp.left;
+      metrics.gy = (g.top + g.height / 2) - vp.top;
+    } else {
+      metrics.gx = vp.width * 0.5;
+      metrics.gy = vp.height * 0.12;
+    }
   }
 
   function updateSheet() {
@@ -1177,6 +1385,7 @@ function createAudioEngine() {
     $('#opt-sound').checked = prefs.sound;
     $('#opt-volume').value = Math.round(prefs.volume * 100);
     $('#opt-typeface').value = prefs.typeface;
+    syncTypefaceFace();
     // Realism Mode must be readable without opening settings: the Settings
     // key carries a latch mark driven by body[data-realism].
     Sound.setEnabled(prefs.sound);
@@ -1217,6 +1426,114 @@ function createAudioEngine() {
 
   $('#opt-new-ribbon').addEventListener('click', swapRibbon);
 
+  /* The card sits at a slight rotation and a native dropdown popup cannot be
+     rotated with it, so the select is kept in the DOM as the source of truth
+     and driven by a listbox that inherits the card's transform. */
+  var syncTypefaceFace = function () {};
+
+  (function buildTypefaceListbox() {
+    var select = $('#opt-typeface');
+    select.tabIndex = -1;               // the listbox owns the tab stop
+    var shell = document.createElement('div');
+    shell.className = 'select-shell';
+    select.parentNode.insertBefore(shell, select);
+    shell.appendChild(select);
+
+    var face = document.createElement('button');
+    face.type = 'button';
+    face.className = 'select-face';
+    face.setAttribute('aria-haspopup', 'listbox');
+    face.setAttribute('aria-expanded', 'false');
+    face.id = 'opt-typeface-face';
+    shell.appendChild(face);
+
+    var list = document.createElement('ul');
+    list.className = 'select-list';
+    list.setAttribute('role', 'listbox');
+    list.setAttribute('aria-labelledby', 'opt-typeface-face');
+    list.hidden = true;
+    shell.appendChild(list);
+
+    var options = Array.prototype.slice.call(select.options);
+    var items = options.map(function (opt) {
+      var li = document.createElement('li');
+      li.className = 'select-option';
+      li.setAttribute('role', 'option');
+      li.dataset.value = opt.value;
+      li.textContent = opt.textContent;
+      li.id = 'typeface-opt-' + opt.value;
+      list.appendChild(li);
+      return li;
+    });
+
+    var activeIndex = 0;
+
+    function syncFace() {
+      var i = select.selectedIndex < 0 ? 0 : select.selectedIndex;
+      face.textContent = options[i].textContent;
+      items.forEach(function (li, n) {
+        li.setAttribute('aria-selected', String(n === i));
+        li.classList.toggle('is-selected', n === i);
+      });
+      list.setAttribute('aria-activedescendant', items[i].id);
+    }
+
+    function setActive(n) {
+      activeIndex = Math.max(0, Math.min(items.length - 1, n));
+      items.forEach(function (li, i) { li.classList.toggle('is-active', i === activeIndex); });
+      list.setAttribute('aria-activedescendant', items[activeIndex].id);
+    }
+
+    function open() {
+      list.hidden = false;
+      face.setAttribute('aria-expanded', 'true');
+      setActive(select.selectedIndex < 0 ? 0 : select.selectedIndex);
+      list.focus();
+    }
+
+    function close(refocus) {
+      list.hidden = true;
+      face.setAttribute('aria-expanded', 'false');
+      if (refocus) { face.focus(); }
+    }
+
+    function choose(n) {
+      select.value = options[n].value;
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      syncFace();
+      close(true);
+    }
+
+    list.tabIndex = -1;
+
+    face.addEventListener('click', function () {
+      if (list.hidden) { open(); } else { close(true); }
+    });
+
+    list.addEventListener('click', function (e) {
+      var li = e.target.closest('.select-option');
+      if (li) { choose(items.indexOf(li)); }
+    });
+
+    list.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { e.preventDefault(); close(true); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); setActive(activeIndex + 1); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(activeIndex - 1); }
+      else if (e.key === 'Home') { e.preventDefault(); setActive(0); }
+      else if (e.key === 'End') { e.preventDefault(); setActive(items.length - 1); }
+      else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); choose(activeIndex); }
+    });
+
+    document.addEventListener('pointerdown', function (e) {
+      if (!list.hidden && !shell.contains(e.target)) { close(false); }
+    });
+
+    // Keep the face honest if anything sets select.value directly.
+    select.addEventListener('change', syncFace);
+    syncTypefaceFace = syncFace;
+    syncFace();
+  })();
+
   /* --------------------------------------------------------- dialog plumbing */
 
   var lastFocus = null;
@@ -1242,7 +1559,10 @@ function createAudioEngine() {
 
   function trapFocus(el, e) {
     if (e.key !== 'Tab') { return; }
-    var items = el.querySelectorAll('button, input, select, [tabindex]:not([tabindex="-1"])');
+    var items = Array.prototype.filter.call(
+      el.querySelectorAll('button, input, select, [tabindex]:not([tabindex="-1"])'),
+      function (n) { return n.tabIndex >= 0 && !n.hidden && n.offsetParent !== null; }
+    );
     if (!items.length) { return; }
     var first = items[0], last = items[items.length - 1];
     if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
@@ -1319,7 +1639,7 @@ function createAudioEngine() {
     updateSheet();
     Sound.play('paperFeed');
     savePage(true);
-    say('Page erased.');
+    say('Page cleared.');
   });
 
   /* ------------------------------------------------------------------ boot */
