@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nothing on this sheet</title>
+<meta name="theme-color" content="#2b2119">
+<link rel="icon" href="/assets/favicon.png" type="image/png" sizes="128x128">
+<style>
+  /* Standalone on purpose. Pulling in style.css would drag the whole
+     machine in for a page that is one sheet of paper and a line of text. */
+  @font-face {
+    font-family: "TT2020";
+    src: url("/assets/fonts/tt2020.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+  }
+
+  body {
+    display: grid;
+    place-items: center;
+    background: #16211c;
+    padding: 24px;
+    box-sizing: border-box;
+    font-family: "TT2020", "Courier New", monospace;
+  }
+
+  .sheet {
+    background: #f4efe4;
+    color: #1c1f2a;
+    width: min(100%, 460px);
+    padding: 56px 40px 64px;
+    box-sizing: border-box;
+    border-radius: 2px;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.55), 0 6px 18px rgba(0, 0, 0, 0.4);
+    transform: rotate(-0.4deg);
+  }
+
+  h1 {
+    margin: 0 0 18px;
+    font-size: 30px;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+  }
+
+  p {
+    margin: 0 0 26px;
+    font-size: 17px;
+    line-height: 1.7;
+  }
+
+  a {
+    color: #1c1f2a;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 4px;
+  }
+
+  a:hover { color: #8f2b23; }
+</style>
+</head>
+<body>
+  <main class="sheet">
+    <h1>404</h1>
+    <p>There is nothing typed on this sheet. The page you asked for was never struck, or has been rolled out of the machine.</p>
+    <p><a href="/">Back to the typewriter</a></p>
+  </main>
+</body>
+</html>
