@@ -127,22 +127,15 @@
      under the platen and bail, the way it does on a real machine, and
      the blank remainder of the page runs downward from it. */
   --guide-x: 50%;
-  /* How far down the opening the machine strikes, and so the only thing
-     that decides how much of the writing stays readable: finished lines
-     take the space above it, unfed paper runs below. At 21% that was one
-     or two readable lines against fifteen of blank paper, which is
-     backwards - the writer stared at paper they had not used yet and
-     could not re-read the sentence they had just finished. Mid-opening is
-     about eight lines each way.
+  /* Keep the strike close to the platen. Tall desktop layouts gain room
+     above the carriage by lowering the whole machine instead of moving
+     the strike away from the hardware. app.js measures the guide's box,
+     so the carriage follows this token with no JS change. */
+  --guide-y: 21%;
 
-     Not the same height as --bar-drop below, and it should not be: the
-     bars converge on the basket, not on the strike line.
-
-     A percentage rather than a length so the short-window and phone
-     blocks inherit it, and app.js measures the guide's laid-out box in
-     measure() rather than reading this token, so the carriage follows
-     with no JS change. */
-  --guide-y: 55%;
+  /* Enough desktop drop to recover the fed-paper viewing area that the
+     old 55% strike point supplied. Disabled below for constrained layouts. */
+  --machine-drop: clamp(110px, 18vh, 220px);
 
   /* How far the typebar basket hangs below the top of the opening. A real
      basket pivots well under the platen and the bars swing UP to it, so
@@ -319,6 +312,7 @@ body {
      narrow screens, where the desk cannot spare the width. */
   padding: 0 clamp(24px, 5.5vw, 96px);
   max-width: 100%;
+  transform: translateY(var(--machine-drop));
 }
 
 
@@ -1077,14 +1071,14 @@ body {
   background: linear-gradient(180deg, #d8c08a, #94773a 42%, #4c3a16 100%);
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 240, 200, 0.45);
 }
-.mb-rod-a { bottom: 96px; }
-.mb-rod-b { bottom: 74px; }
+.mb-rod-a { top: var(--well-h); }
+.mb-rod-b { top: calc(var(--well-h) + 22px); }
 
 /* maker's plate on the front face, stamped with the build version */
 .mb-plate {
   position: absolute;
   left: 200px;
-  bottom: 44px;
+  top: calc(var(--well-h) + 44px);
   transform: translateX(-50%);
   padding: 3px 12px 4px;
   font-family: var(--face);
@@ -2707,6 +2701,7 @@ body[data-sound="off"] .thumbwheel { opacity: 0.42; }
   :root {
     --scale: 1.25;
     --key-d: 68px;
+    --machine-drop: 0px;
   }
 
   #machine { padding: 0 10px 130px; }

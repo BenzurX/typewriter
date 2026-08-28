@@ -2,6 +2,12 @@
 
 All notable changes to this project are recorded here. Versions start at v0.01 and increment by 0.01 per release.
 
+## v0.03 - 2026-08-28
+
+### Changed
+
+- `Codex:` Restored the strike point from 55% to 21% of the sheet opening so it sits close to the platen. Tall desktop layouts now lower the whole machine to preserve more fed paper above it, while the brass crossbars and version plate sit near the top of the hood so they remain visible.
+
 ## v0.02 - 2026-08-28
 
 ### Changed
