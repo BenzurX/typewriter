@@ -165,6 +165,9 @@
 </div>
 
 <p id="a11y-status" class="visually-hidden" role="status" aria-live="polite"></p>
+<!-- Visible only for failures. aria-hidden because #a11y-status above has
+     already announced the same words; without it every failure is read twice. -->
+<p id="status-slip" aria-hidden="true"></p>
 
 <script src="app.js"></script>
 </body>

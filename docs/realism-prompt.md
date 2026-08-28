@@ -146,6 +146,8 @@ There is no conventional web UI in this app. Every control is a **typewriter key
 
 **ERASE confirmation.** Never a browser `confirm()` and never a generic modal. Erase slides in a smaller version of the ruled buff Settings notecard, including its red rule, blue lines, paper grain, and dog-ear, reading something like "ERASE THIS PAGE? THIS CANNOT BE UNDONE." with two small key-style controls, **YES** and **NO**, styled identically to the rail keys. NO is the default focus. Confirming plays the paper-feed/roll sound as the continuous sheet clears.
 
+**When something fails.** The non-toast rule above governs *confirmation*, and it stands: success is reported by the key stamp, by the sheet visibly clearing, by the card showing the new setting. Failure is different, and needs a channel of its own, because a copy that did not reach the clipboard or a save the browser refused for want of storage is invisible in every one of those. A failure leaves a small slip of paper on the desk below the machine: paper stock, ink text in the page face, very slightly askew, a soft drop shadow, fading in and out of its own accord after a few seconds. It never takes pointer events, and it is never used to report success.
+
 **Accessibility.** These are real, focusable `<button>` elements underneath the art. Keyboard focus draws a visible ink-colored ring on the key ring itself. Each has an accessible label. Tab order runs the rail after the sheet, so a typist never tabs out of the page by accident.
 
 ## 9. The settings card

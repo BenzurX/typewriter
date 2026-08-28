@@ -1006,11 +1006,41 @@ function createAudioEngine() {
   var card = $('#settings-card');
   var carbon = $('#erase-confirm');
   var status = $('#a11y-status');
+  var slip = $('#status-slip');
   var versionPlate = $('#version-plate');
 
   if (versionPlate) versionPlate.textContent = 'VERSION ' + APP_VERSION;
 
-  function say(msg) { status.textContent = msg; }
+  // Everything is announced. Only failures are also shown.
+  //
+  // Success already has a channel the spec is emphatic about: the key
+  // stamps, the sheet visibly clears, the card shows the new setting.
+  // Section 8 of docs/realism-prompt.md rules out a toast for those, and a
+  // machine that popped a receipt after every keypress would be wrong.
+  // Failure had no channel at all - "could not copy", or a save refused
+  // because localStorage is full, reached nobody who was not running a
+  // screen reader, which is precisely backwards. Those pass show=true and
+  // surface as a slip of paper on the desk.
+  // Two separate elements on purpose. The live region has to be rewritten
+  // by every message or it stops announcing, and several handlers report a
+  // failure and then immediately announce what they did anyway - toggling
+  // Realism Mode saves prefs, then describes the new mode. Sharing one
+  // element meant that second message tore the failure slip off the screen
+  // before it could be read. The slip is written only when show is true, so
+  // an announce-only message can no longer erase one.
+  var statusTimer = 0;
+  function say(msg, show) {
+    status.textContent = msg;
+    if (!show) { return; }
+    slip.textContent = msg;
+    slip.classList.add('is-showing');
+    window.clearTimeout(statusTimer);
+    // Text stays after the fade; there is nothing reading it, and clearing
+    // it would make the slip empty mid-transition.
+    statusTimer = window.setTimeout(function () {
+      slip.classList.remove('is-showing');
+    }, 3400);
+  }
 
   /* ------------------------------------------------------------------- rng
      Each impression freezes a seed at strike time. Everything visual about
@@ -1576,6 +1606,19 @@ function createAudioEngine() {
     keyCatcher.focus({ preventScroll: true });
   });
 
+  // ...and mousedown's default action takes that focus straight back: it
+  // moves focus to the nearest focusable ancestor of the target, and the
+  // sheet has none, so focus lands on <body> and the software keyboard
+  // never appears. Touch devices synthesise a mousedown of their own, so
+  // suppressing it here is what actually makes tapping the paper work.
+  // Nothing on the sheet is selectable or draggable, so no useful default
+  // is lost. Guarded like the handler above: while a dialog is open the
+  // sheet must not take focus off it.
+  $('#sheet-viewport').addEventListener('mousedown', function (e) {
+    if (!card.hidden || !carbon.hidden) { return; }
+    e.preventDefault();
+  });
+
   $('#carriage-lever').addEventListener('click', function () { Sound.unlock(); carriageReturn(); });
 
   /* ------------------------------------------------------------------ text */
@@ -1710,7 +1753,7 @@ function createAudioEngine() {
       if (!quiet) { say('Saved.'); }
       return true;
     } catch (err) {
-      say('Could not save.');
+      say('Could not save.', true);
       return false;
     }
   }
@@ -1799,7 +1842,7 @@ function createAudioEngine() {
     } catch (err) {
       // Silently swallowing this left settings looking applied but gone on
       // the next reload, with nothing to explain it.
-      say('Settings changed, but could not be saved.');
+      say('Settings changed, but could not be saved.', true);
     }
   }
 
@@ -2075,9 +2118,9 @@ function createAudioEngine() {
           navigator.clipboard.writeText(text).then(function () {
             flashKey(btn);
             say('Page copied.');
-          }, function () { say('Could not copy.'); });
+          }, function () { say('Could not copy.', true); });
         } else {
-          say('Clipboard not available.');
+          say('Clipboard not available.', true);
         }
 
       } else if (action === 'erase') {

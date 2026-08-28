@@ -222,6 +222,51 @@ body {
   clip-path: inset(50%);
 }
 
+/* The slip of paper the machine leaves on the desk when something fails -
+   a copy that did not go through, a save refused because localStorage is
+   full. Those used to reach screen readers and nobody else.
+
+   Failures only. Success keeps the confirmations section 8 of
+   docs/realism-prompt.md calls for - the key stamp, the sheet visibly
+   clearing - and explicitly rules out a toast for. #a11y-status above
+   still announces everything, success included.
+
+   Centred along the bottom because that strip is empty at desk widths -
+   the rail stacks up the left edge. The narrow-screen block lifts it when
+   the rail unfolds into a row along the same edge. */
+#status-slip {
+  position: fixed;
+  left: 50%;
+  bottom: 26px;
+  z-index: 60;
+  margin: 0;
+  transform: translateX(-50%) rotate(-0.7deg);
+  max-width: min(78vw, 420px);
+  padding: 9px 18px 10px;
+  font-family: var(--face);
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+  text-align: center;
+  color: var(--ink-faint);
+  background: var(--paper-lit);
+  border-radius: 1px;
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.4),
+    0 1px 3px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  /* Transient and purely informational: it must never intercept a strike
+     aimed at the paper behind it. */
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+
+#status-slip.is-showing {
+  opacity: 1;
+  transform: translateX(-50%) rotate(-0.7deg) translateY(-4px);
+}
+
 #desk {
   position: relative;
   width: 100%;
@@ -2688,6 +2733,9 @@ body[data-sound="off"] .thumbwheel { opacity: 0.42; }
 
   .arm { border-radius: 0 3px 3px 0 !important; }
 
+  /* The rail now occupies the bottom strip the slip was using. */
+  #status-slip { bottom: 128px; }
+
   #settings-card {
     top: auto;
     bottom: 150px;
@@ -2772,7 +2820,8 @@ body[data-sound="off"] .thumbwheel { opacity: 0.42; }
   #erase-confirm,
   #key-catcher,
   #version-plate,
-  #a11y-status { display: none !important; }
+  #a11y-status,
+  #status-slip { display: none !important; }
 
   html,
   body,

@@ -2,6 +2,15 @@
 
 All notable changes to this project are recorded here. Versions start at v0.01 and increment by 0.01 per release.
 
+## Unreleased
+
+Pending entry. The pre-push gate folds this under the new version number at push time.
+
+### Fixed
+
+- Tapping the paper on a touch device did not raise the software keyboard, which made the app impossible to type into without a physical keyboard. Focus was moved to the off-screen input on `pointerdown`, and `mousedown`'s default action then moved it straight to `<body>`; that default is now suppressed on the sheet.
+- Failure messages were delivered to screen readers and to nobody else. "Could not copy", "Clipboard not available", and both of the settings/page save failures now also leave a visible slip of paper below the machine. Success is unchanged and still confirms through the key stamp, per section 8 of the realism spec, which rules out a toast for it.
+
 ## v0.01 - 2026-08-28
 
 First release. A browser typewriter: monospaced grid, per-glyph ink variation, layered synthesised key sounds, carriage motion, and mechanically-modeled correction where backspace does not erase.
