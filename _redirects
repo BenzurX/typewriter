@@ -1,0 +1,6 @@
+# Cloudflare Pages redirect rules. Format: /from /to [status]
+
+# stage/ holds design mockups kept in the repo for reference. They are not
+# part of the app and should not be browsable on the production domain, so
+# serve a 404 instead of the file. They stay in git either way.
+/stage/* /index.html 404
