@@ -1,6 +1,16 @@
 # Cloudflare Pages redirect rules. Format: /from /to [status]
+#
+# A Pages deploy serves the repo root, so everything committed here is
+# fetchable on the production domain unless a rule says otherwise. The app
+# is index.html, style.css, app.js and assets/. Everything below is repo
+# furniture that should not be served, and stays in git either way.
 
-# stage/ holds design mockups kept in the repo for reference. They are not
-# part of the app and should not be browsable on the production domain, so
-# serve a 404 instead of the file. They stay in git either way.
+# Design mockups kept for reference, not part of the app.
 /stage/* /index.html 404
+
+# Working notes: the realism spec, the progress log, and the agent
+# instructions file.
+/docs/* /index.html 404
+/progress/* /index.html 404
+/CLAUDE.md /index.html 404
+/PROGRESS.md /index.html 404
