@@ -1619,7 +1619,39 @@ function createAudioEngine() {
     e.preventDefault();
   });
 
-  $('#carriage-lever').addEventListener('click', function () { Sound.unlock(); carriageReturn(); });
+  // The lever activates on pointerdown, not on click.
+  //
+  // #carriage-lever:active swings the arm 30 degrees further than :hover
+  // does (style.css), so pressing it throws the grip out from under the
+  // cursor before the button is released. A click event only fires when
+  // the press and the release resolve to the same element, so the press
+  // animation was eating its own activation: the hover and press states
+  // both kept working, because they track the box rather than the event
+  // pair, and then nothing happened. Throwing the lever felt dead.
+  //
+  // pointerdown is also the honest moment for this control - the return
+  // should go with the throw, not with letting go afterwards - and it
+  // covers touch, where the same swing would break a tap the same way.
+  //
+  // click still has to work: this is a real <button> with an accessible
+  // label, and Enter and Space must return the carriage. Those arrive as
+  // clicks with detail 0, which is what tells them apart from the click a
+  // mouse press generates. Without that guard a single mouse press would
+  // return twice, once per handler.
+  var leverEl = $('#carriage-lever');
+
+  leverEl.addEventListener('pointerdown', function (e) {
+    // Primary button only. A right or middle press is not an activation.
+    if (e.button !== 0) { return; }
+    Sound.unlock();
+    carriageReturn();
+  });
+
+  leverEl.addEventListener('click', function (e) {
+    if (e.detail !== 0) { return; }
+    Sound.unlock();
+    carriageReturn();
+  });
 
   /* ------------------------------------------------------------------ text */
 

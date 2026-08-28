@@ -12,6 +12,7 @@ Pending entry. The pre-push gate folds this under the new version number at push
 
 ### Fixed
 
+- Throwing the carriage return lever did nothing. Pressing it swings the arm 30 degrees further than hovering does, which moved the grip out from under the cursor before the button was released, and a click event needs the press and the release on the same element. The hover and press states went on working the whole time, so the lever looked alive and was not. It now returns on `pointerdown`, which is both the moment the arm is thrown and the moment that works on touch; `Enter` and `Space` still return through `click`.
 - Tapping the paper on a touch device did not raise the software keyboard, which made the app impossible to type into without a physical keyboard. Focus was moved to the off-screen input on `pointerdown`, and `mousedown`'s default action then moved it straight to `<body>`; that default is now suppressed on the sheet.
 - Failure messages were delivered to screen readers and to nobody else. "Could not copy", "Clipboard not available", and both of the settings/page save failures now also leave a visible slip of paper below the machine. Success is unchanged and still confirms through the key stamp, per section 8 of the realism spec, which rules out a toast for it.
 
