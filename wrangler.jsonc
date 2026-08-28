@@ -1,0 +1,27 @@
+{
+  // Static site served from ./public by a Cloudflare Worker, matching the
+  // pattern used by the other side projects (see ojochal-fundraiser). The
+  // repo is the source of truth on GitHub; this config is what turns it into
+  // https://typewriter.benzur.workers.dev.
+  //
+  // Everything outside ./public - docs/, progress/, stage/, this config and
+  // the markdown - stays off the public URL. The asset server publishes the
+  // named directory and nothing above it, so that boundary is the only thing
+  // keeping working notes private. Anything the app loads at runtime belongs
+  // inside public/; anything else does not.
+  //
+  // Deploy with: npx wrangler deploy
+  "name": "typewriter",
+  "compatibility_date": "2026-08-28",
+  "assets": {
+    "directory": "./public",
+    // Serve public/404.html with a real 404 for unmatched paths. Without this
+    // the default is a bare 404 with no body; the single-page-application
+    // mode would be wrong here, since it answers every unknown path with
+    // index.html and a 200.
+    "not_found_handling": "404-page"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

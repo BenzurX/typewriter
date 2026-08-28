@@ -32,6 +32,12 @@ First release. A browser typewriter: monospaced grid, per-glyph ink variation, l
 - The Save rail key would not export when `localStorage` was full, the moment getting the page out of the browser matters most.
 - Corrupt or hand-edited saved pages are now validated record by record instead of being trusted wholesale.
 
+### Deploy
+
+- Hosted as a Cloudflare Worker serving `public/` as static assets at https://typewriter.benzur.workers.dev, with the repo on GitHub at `BenzurX/typewriter`. Matches the pattern the other side projects use.
+- The shipping app moved into `public/`. A deploy publishes that directory and nothing above it, which is what keeps `docs/`, `progress/`, `stage/` and the working markdown off the public URL.
+- Unmatched paths serve a 404 page rather than falling back to the app with a 200.
+
 ### Changed
 
 - `updateSheet()` no longer reads layout: the platen and viewport widths are cached during `measure()`, removing a forced synchronous layout from every keystroke.

@@ -21,14 +21,15 @@ Pre-deploy review of the whole app via Codex plus a Claude pass, then all accept
 
 ## Deploy (set up 2026-08-28, status: live)
 `deploy` `cloudflare` `github`
-Live at https://typewriter-7ep.pages.dev, pushed to https://github.com/BenzurX/typewriter on branch `main`. Deploys are direct uploads from this machine via `wrangler pages deploy public --project-name typewriter`, NOT Git-connected, so a `git push` alone does not update the site - that connection is dashboard-only and has not been made.
+A Cloudflare Worker serving `public/` as static assets at https://typewriter.benzur.workers.dev, repo at https://github.com/BenzurX/typewriter on `main`, matching the pattern used by the other side projects. Workers Builds is NOT connected, so `git push` and `npx wrangler deploy` are separate acts - a push alone does not update the live site.
 → [progress/review-hardening.md](progress/review-hardening.md)
 
 ## Next Session
 1. Hand-test the live site in a browser: first keystroke after a cold load makes a sound; a carriage return plays one ratchet not two; Ctrl+Z after Enter returns to where the carriage actually was; word wrap in friendly mode does not visibly rebuild the page. None of this has ever been executed, only reviewed.
 2. Hand-test on a phone: tapping the sheet raises the keyboard, typing lands on the paper, backspace white-outs (friendly mode) or steps back (Realism Mode), and the type reads at a comfortable size. If the type is wrong, `public/style.css` has the single `--scale` value for upright phones in its last media block.
-3. Optional: connect the GitHub repo to the Pages project in the Cloudflare dashboard so pushes deploy automatically. Set the output directory to `public`. Until then every deploy is a manual `wrangler pages deploy public --project-name typewriter`.
-4. Next release bumps `APP_VERSION` (`public/app.js:992`) to 0.02 and opens a fresh CHANGELOG entry. v0.09 to v0.10 and v1.00 need Ben's explicit approval.
+3. Optional: connect Workers Builds to the GitHub repo in the Cloudflare dashboard so a push deploys automatically. Needs Ben's OAuth step, not doable from the CLI. Until then every deploy is a manual `npx wrangler deploy`.
+4. Tear down the superseded `typewriter` Cloudflare Pages project if it is still there. It was the first attempt at hosting before the Worker pattern replaced it, and it still answers on typewriter-7ep.pages.dev.
+5. Next release bumps `APP_VERSION` (`public/app.js:992`) to 0.02 and opens a fresh CHANGELOG entry. v0.09 to v0.10 and v1.00 need Ben's explicit approval.
 
 ## Backlog
 - Red-ribbon (bichrome) mode. The `ink` field already exists on every impression and serializes; nothing reads `'red'` yet except the renderer.
