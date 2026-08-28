@@ -27,7 +27,7 @@ A Cloudflare Worker serving `public/` as static assets at https://typewriter.ben
 ## Next Session
 1. Hand-test the live site in a browser: first keystroke after a cold load makes a sound; a carriage return plays one ratchet not two; Ctrl+Z after Enter returns to where the carriage actually was; word wrap in friendly mode does not visibly rebuild the page. None of this has ever been executed, only reviewed.
 2. Hand-test on a phone: tapping the sheet raises the keyboard, typing lands on the paper, backspace white-outs (friendly mode) or steps back (Realism Mode), and the type reads at a comfortable size. If the type is wrong, `public/style.css` has the single `--scale` value for upright phones in its last media block.
-3. Optional: connect Workers Builds to the GitHub repo in the Cloudflare dashboard so a push deploys automatically. Needs Ben's OAuth step, not doable from the CLI. Until then every deploy is a manual `npx wrangler deploy`.
+3. Ship with `.\ship.ps1`, not a bare `git push`. It pushes, deploys, and then verifies both that the live `APP_VERSION` moved and that nothing outside `public/` became fetchable. Workers Builds was considered instead and deliberately not connected: it would make every push production and turn the deploy gate into a set of checks that can only run after the fact.
 4. Next release bumps `APP_VERSION` (`public/app.js:992`) to 0.02 and opens a fresh CHANGELOG entry. v0.09 to v0.10 and v1.00 need Ben's explicit approval.
 
 ## Backlog

@@ -27,14 +27,16 @@ Unmatched paths serve `public/404.html` with a real 404, set by `assets.not_foun
 The document model is a sparse grid of cells, each holding an ordered list of impressions (glyph, ink color, frozen random seed) - not a string. Overstrike, correction patches, and per-glyph variation all depend on this.
 
 ## Pre-push gate
-Before any `git push` in this project:
+Pushing and deploying are one task in this project, not two. Workers Builds is not connected, so `git push` alone leaves the live site on the old build - a push that stops at GitHub is an unfinished push. Before any `git push`:
 - [ ] Bump `APP_VERSION` in `public/app.js` (starts at v0.01, +0.01 per release; tens boundaries and v1.00+ need Ben's approval)
 - [ ] Add/fold the pending CHANGELOG.md entry under the new version
 - [ ] Bump the service worker `CACHE` name if a service worker exists
 - [ ] Confirm `docs/realism-prompt.md` still matches actual behavior if the feel changed
 
+Then ship with `.\ship.ps1` rather than a bare `git push`. It pushes, deploys, and verifies in one run, and refuses to proceed on a dirty tree or an unbumped `APP_VERSION`. A bare `git push` is only correct when the commit deliberately should not reach users yet - say so out loud when doing that, so the undeployed state is a decision on the record and not an oversight.
+
 ## Deploy gate
-Because Workers Builds is not connected, pushing and deploying are separate acts. After a push that should reach users:
+`ship.ps1` performs these automatically after the deploy. Do them by hand only when deploying without it:
 - [ ] `npx wrangler deploy`
-- [ ] Confirm the live site serves the new build, not a cached old one
+- [ ] Confirm the live site serves the new build, not a cached old one (compare `APP_VERSION` at `/app.js` against `public/app.js`)
 - [ ] Confirm nothing outside `public/` became fetchable
