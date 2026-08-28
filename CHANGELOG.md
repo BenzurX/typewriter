@@ -6,6 +6,10 @@ All notable changes to this project are recorded here. Versions start at v0.01 a
 
 Pending entry. The pre-push gate folds this under the new version number at push time.
 
+### Changed
+
+- The strike point moved from 21% down the sheet opening to 55%. It was showing one or two readable lines above about fifteen of blank paper, so the writer looked at paper they had not used yet and could not re-read the sentence they had just finished; it is now roughly eight lines each way. One token, `--guide-y`, expressed as a percentage so every breakpoint inherits it. No JS change: `measure()` reads the guide's laid-out box rather than the token.
+
 ### Fixed
 
 - Tapping the paper on a touch device did not raise the software keyboard, which made the app impossible to type into without a physical keyboard. Focus was moved to the off-screen input on `pointerdown`, and `mousedown`'s default action then moved it straight to `<body>`; that default is now suppressed on the sheet.

@@ -127,9 +127,22 @@
      under the platen and bail, the way it does on a real machine, and
      the blank remainder of the page runs downward from it. */
   --guide-x: 50%;
-  /* Just below the platen and bail, but far enough down that a couple of
-     finished lines stay readable before they roll up behind the roller. */
-  --guide-y: 21%;
+  /* How far down the opening the machine strikes, and so the only thing
+     that decides how much of the writing stays readable: finished lines
+     take the space above it, unfed paper runs below. At 21% that was one
+     or two readable lines against fifteen of blank paper, which is
+     backwards - the writer stared at paper they had not used yet and
+     could not re-read the sentence they had just finished. Mid-opening is
+     about eight lines each way.
+
+     Not the same height as --bar-drop below, and it should not be: the
+     bars converge on the basket, not on the strike line.
+
+     A percentage rather than a length so the short-window and phone
+     blocks inherit it, and app.js measures the guide's laid-out box in
+     measure() rather than reading this token, so the carriage follows
+     with no JS change. */
+  --guide-y: 55%;
 
   /* How far the typebar basket hangs below the top of the opening. A real
      basket pivots well under the platen and the bars swing UP to it, so
