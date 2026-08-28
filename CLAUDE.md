@@ -17,7 +17,9 @@ A Cloudflare Worker named `typewriter`, configured by `wrangler.jsonc`, serving 
 Workers Builds is not connected, so `git push` alone does not update the live site - deploying is a separate `npx wrangler deploy`. Connecting the repo so a push deploys automatically is a Cloudflare dashboard step needing Ben's OAuth; it cannot be done from the CLI.
 
 ## Layout
-The shipping app lives in `public/`, which is the Worker's asset directory. Everything outside it (`docs/`, `progress/`, `stage/`, `wrangler.jsonc`, `CLAUDE.md`, `PROGRESS.md`, `CHANGELOG.md`) is repo furniture and is deliberately not deployed. The asset server publishes the named directory and nothing above it, and there is no per-file exclusion, so that directory boundary is the only thing keeping working notes off the public URL. Anything new that should not be public goes outside `public/`; anything the app loads at runtime goes inside it.
+The shipping app lives in `public/`, which is the Worker's asset directory. Everything outside it (`docs/`, `progress/`, `stage/`, `wrangler.jsonc`, `CLAUDE.md`, `PROGRESS.md`, `CHANGELOG.md`) is repo furniture and is deliberately not deployed. The asset server publishes the named directory and nothing above it, so that directory boundary is what keeps working notes off the public URL. Anything new that should not be public goes outside `public/`; anything the app loads at runtime goes inside it.
+
+The alternative is `board-game-tracker`'s approach: point `assets.directory` at the repo root and exclude internal paths with an `.assetsignore` file. Both work. This project uses the directory boundary because it fails safe - a new file is private unless deliberately put in `public/`, whereas `.assetsignore` makes every new file public unless someone remembers to list it.
 
 Unmatched paths serve `public/404.html` with a real 404, set by `assets.not_found_handling` in `wrangler.jsonc`. Do not switch that to `single-page-application` - this is a single page, but that mode answers every unknown path with `index.html` and a 200, which hides typos and makes missing assets look like successes.
 
