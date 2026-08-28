@@ -989,7 +989,7 @@ function createAudioEngine() {
 
   /* The build version, stamped onto the maker's plate on the front of the
      machine instead of a model name. Bumped at push time, see CLAUDE.md. */
-  var APP_VERSION = '0.01';
+  var APP_VERSION = '0.02';
 
   var STORAGE_KEY = 'typewriter:v1';
   var PREFS_KEY = 'typewriter:prefs:v1';

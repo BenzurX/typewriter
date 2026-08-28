@@ -2,9 +2,7 @@
 
 All notable changes to this project are recorded here. Versions start at v0.01 and increment by 0.01 per release.
 
-## Unreleased
-
-Pending entry. The pre-push gate folds this under the new version number at push time.
+## v0.02 - 2026-08-28
 
 ### Changed
 
