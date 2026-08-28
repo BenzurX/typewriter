@@ -67,7 +67,7 @@ Known limitation: touch backspace maps only to the current mode's unshifted bind
 Four review findings were rejected on verification rather than acted on.
 
 - **White-out not persisting covered impressions** was called a blocker and an invariant violation. It is neither: realism-prompt section 7 describes white-out as an opaque patch over the ink, not as a correction that must survive a reload as undo history. Design choice.
-- **Synthesised audio instead of a sample pool** was flagged against the spec. The header comment at `app.js:1-22` already documents this as a deliberate substitution with a stated migration path.
+- **Synthesised audio instead of a sample pool** was flagged against the spec. The header comment at `public/app.js:1-22` already documents this as a deliberate substitution with a stated migration path.
 - **Realism Mode absent from the button rail** was flagged. Spec section 8 lists four v1 rail keys and describes the Realism Mode key as optional ("if surfaced on the rail"); the requirement is only that the mode be readable at a glance, which the latched Settings key satisfies.
 - **IME composition unsupported** was called a blocker. Downgraded: this is a Latin mechanical typewriter simulator and the exclusion is defensible, but it was nowhere stated, so a guard was added and the product question left open.
 
