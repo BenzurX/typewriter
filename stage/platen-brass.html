@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typewriter - brass tie-rod carriage, four builds</title>
+<link href="https://fonts.googleapis.com/css2?family=Cutive+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f3ece0;
+  --paper-lit: #f8f3ea;
+  --ink: #2b2622;
+  --steel: #9aa0a6;
+  --steel-hi: #e4e8ec;
+  --steel-lo: #4a4f55;
+  --rubber: #2b2b2e;
+  --brass: #b8934a;
+  --brass-hi: #e8cf92;
+  --brass-lo: #5e4820;
+  --nickel-hi: #eef2f6;
+  --nickel: #b3bac1;
+  --desk: #16211c;
+  --desk-hi: #2b3d33;
+  --desk-lo: #090f0c;
+  --face: "Cutive Mono", "Courier New", monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--face);
+  color: #e2ddd2;
+  background-color: var(--desk);
+  background-image:
+    radial-gradient(110% 60% at 15% -6%, rgba(206,255,224,0.12), rgba(206,255,224,0) 54%),
+    repeating-linear-gradient(90deg,
+      rgba(0,0,0,0) 0 214px, rgba(0,0,0,0.62) 214px 218px,
+      rgba(150,200,168,0.07) 218px 220px, rgba(0,0,0,0) 220px 224px),
+    repeating-linear-gradient(89.3deg,
+      rgba(120,170,138,0.07) 0 2px, rgba(0,0,0,0.14) 2px 6px, rgba(0,0,0,0) 6px 14px),
+    linear-gradient(170deg, var(--desk-hi) 0%, var(--desk) 50%, var(--desk-lo) 100%);
+  background-attachment: fixed;
+}
+
+header { padding: 30px 24px 4px; max-width: 1180px; margin: 0 auto; }
+header h1 { margin: 0 0 6px; font-size: 20px; letter-spacing: 0.04em; }
+header p { margin: 0; font-size: 13px; opacity: 0.62; line-height: 1.6; }
+
+.option { max-width: 1180px; margin: 0 auto; padding: 0 24px 34px; }
+.label { display: flex; align-items: baseline; gap: 12px; padding: 34px 2px 4px; font-size: 14px; letter-spacing: 0.06em; }
+.label .tag { font-size: 12px; padding: 2px 8px; border: 1px solid rgba(226,221,210,0.35); border-radius: 2px; }
+.label .note { font-size: 12px; opacity: 0.6; letter-spacing: 0; }
+.bullets { margin: 2px 2px 10px; padding-left: 18px; font-size: 12px; opacity: 0.62; line-height: 1.7; }
+.bullets b { font-weight: normal; color: var(--brass-hi); opacity: 0.9; }
+
+/* ============================================================
+   SHARED RIG - all four are the P2 open brass tie-rod build
+   ============================================================ */
+
+.rig { position: relative; width: 760px; max-width: 100%; margin: 0 auto; padding: 60px 0 0; }
+
+.carriage {
+  position: relative;
+  width: 560px; height: 58px;
+  margin: 0 auto;
+  z-index: 4;
+  filter: drop-shadow(0 12px 20px rgba(0,0,0,0.55));
+}
+
+/* Rail + escapement rack. The machine is seen from the front and slightly
+   above, so anything behind the platen sits higher on screen: the rail and
+   its rack run above the roller, and the frames reach up to meet them. */
+.rail {
+  position: absolute;
+  left: -86px; right: -86px; top: -30px;
+  height: 13px; z-index: 0;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #d8dde2 0%, #8f949a 30%, #43464b 78%, #232529 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 4px 8px rgba(0,0,0,0.5);
+}
+.rail::after {
+  content: "";
+  position: absolute;
+  left: 40px; right: 40px; bottom: 100%;
+  height: 7px;
+  background: repeating-linear-gradient(90deg,
+    #3a3d42 0 4px, #14161a 4px 5px, #23262b 5px 9px, #0e1013 9px 10px);
+  box-shadow: inset 0 -2px 4px rgba(0,0,0,0.7);
+}
+
+/* Brass-over-steel end frames, pitted. Tall enough to reach from the rail
+   above the platen down past the bail, and set outboard of the platen
+   collars, so every other part can land on one of them. */
+.side {
+  position: absolute;
+  top: -40px;
+  width: 48px; height: 130px;
+  z-index: 5;
+  border-radius: 7px;
+  background:
+    radial-gradient(60% 34% at 30% 12%, rgba(255,238,200,0.30), rgba(255,238,200,0) 58%),
+    radial-gradient(circle at 24% 30%, rgba(0,0,0,0.5) 0 1.8px, rgba(0,0,0,0) 3px),
+    radial-gradient(circle at 66% 52%, rgba(0,0,0,0.45) 0 1.4px, rgba(0,0,0,0) 2.6px),
+    radial-gradient(circle at 38% 74%, rgba(0,0,0,0.5) 0 2.2px, rgba(0,0,0,0) 3.6px),
+    radial-gradient(circle at 78% 84%, rgba(0,0,0,0.4) 0 1.2px, rgba(0,0,0,0) 2.4px),
+    linear-gradient(158deg, #8a7647 0%, #4d453a 44%, #201d1a 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,236,190,0.35),
+    inset -4px -4px 10px rgba(0,0,0,0.62),
+    0 6px 12px rgba(0,0,0,0.5);
+}
+.side.left  { left: -62px; }
+.side.right { right: -62px; }
+/* the bearing boss, centred on the platen axis */
+.side::before {
+  content: "";
+  position: absolute;
+  top: 46px; left: 50%;
+  width: 30px; height: 30px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 36% 30%, rgba(255,244,214,0.55), rgba(255,244,214,0) 46%),
+    linear-gradient(150deg, var(--brass), #4a3c1e 72%);
+  box-shadow: inset 0 0 7px rgba(0,0,0,0.75), 0 1px 0 rgba(255,236,190,0.2);
+}
+
+.screw {
+  position: absolute;
+  width: 11px; height: 11px;
+  border-radius: 50%;
+  background:
+    linear-gradient(0deg, rgba(0,0,0,0.75) 46%, rgba(0,0,0,0) 47% 53%, rgba(0,0,0,0.75) 54%),
+    radial-gradient(circle at 34% 30%, rgba(255,244,214,0.6), rgba(255,244,214,0) 52%),
+    linear-gradient(150deg, #c2a463, #4c3d1f);
+  box-shadow: inset 0 0 3px rgba(0,0,0,0.6), 0 1px 1px rgba(0,0,0,0.5);
+}
+.screw.a { top: 8px; left: 8px; }
+.screw.b { top: 8px; right: 8px; }
+.screw.c { bottom: 9px; left: 50%; transform: translateX(-50%) rotate(38deg); }
+
+/* platen + wear */
+.platen {
+  position: absolute;
+  inset: 0 0 12px 0;
+  z-index: 3;
+  border-radius: 24px / 22px;
+  background:
+    linear-gradient(172deg,
+      rgba(0,0,0,0) 0 18%, rgba(218,218,222,0.10) 19%,
+      rgba(0,0,0,0) 20% 57%, rgba(4,4,6,0.24) 58%, rgba(0,0,0,0) 60%),
+    linear-gradient(180deg,
+      rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.06) 16%,
+      rgba(0,0,0,0.18) 46%, rgba(0,0,0,0.52) 82%, rgba(0,0,0,0.34) 100%),
+    linear-gradient(96deg, #4b4a4d 0%, #6a686c 12%, #3c3b3f 62%, #232326 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.28),
+    inset 0 -6px 14px rgba(0,0,0,0.6),
+    0 2px 0 rgba(0,0,0,0.5);
+}
+.platen-wear {
+  position: absolute; inset: 0;
+  border-radius: inherit; pointer-events: none;
+  background:
+    linear-gradient(180deg,
+      rgba(0,0,0,0) 0 52%, rgba(10,9,11,0.30) 58%, rgba(10,9,11,0.34) 70%, rgba(0,0,0,0) 78%),
+    repeating-linear-gradient(95.5deg,
+      rgba(0,0,0,0) 0 47px, rgba(226,226,232,0.16) 48px, rgba(6,6,8,0.28) 49px, rgba(0,0,0,0) 51px),
+    repeating-linear-gradient(84.5deg,
+      rgba(0,0,0,0) 0 113px, rgba(220,220,228,0.10) 114px, rgba(0,0,0,0) 116px),
+    radial-gradient(circle at 18% 62%, rgba(0,0,0,0.5) 0 1.6px, rgba(255,255,255,0.10) 2px, rgba(0,0,0,0) 3px),
+    radial-gradient(circle at 41% 38%, rgba(0,0,0,0.42) 0 1.2px, rgba(0,0,0,0) 2.4px),
+    radial-gradient(circle at 63% 71%, rgba(0,0,0,0.46) 0 2px, rgba(255,255,255,0.08) 2.4px, rgba(0,0,0,0) 3.6px),
+    radial-gradient(circle at 77% 30%, rgba(0,0,0,0.38) 0 1.4px, rgba(0,0,0,0) 2.6px),
+    radial-gradient(circle at 88% 58%, rgba(0,0,0,0.44) 0 1.8px, rgba(0,0,0,0) 3px),
+    repeating-linear-gradient(178deg,
+      rgba(0,0,0,0) 0 6px, rgba(235,235,238,0.05) 7px, rgba(0,0,0,0) 8px 13px);
+}
+
+.collar {
+  position: absolute; top: -5px;
+  width: 34px; height: 68px;
+  z-index: 6;
+  border-radius: 50% / 46%;
+  background:
+    radial-gradient(60% 50% at 34% 26%, rgba(255,255,255,0.5), rgba(255,255,255,0) 62%),
+    linear-gradient(150deg, #7c7a80 0%, #46454a 55%, #232226 100%);
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.6);
+}
+/* the collars bridge the gap between the roller ends and the castings */
+.collar.l { left: -26px; }
+.collar.r { right: -26px; }
+
+.knob {
+  position: absolute;
+  right: -104px; top: -2px;
+  width: 34px; height: 54px;
+  z-index: 8;
+  border-radius: 8px 48% 48% 8px / 9px 50% 50% 9px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.22), transparent 24%, rgba(0,0,0,0.42) 82%),
+    repeating-linear-gradient(180deg, #3b383c 0 4px, #171619 4px 8px);
+  box-shadow:
+    inset 4px 2px 7px rgba(255,255,255,0.10),
+    inset -10px -4px 12px rgba(0,0,0,0.72),
+    0 4px 9px rgba(0,0,0,0.52);
+}
+.knob::after {
+  content: "";
+  position: absolute;
+  right: 0; top: 1px;
+  width: 11px; height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #484449 0%, #232125 38%, #101013 78%, #28262a 100%);
+  box-shadow: inset 3px 1px 4px rgba(255,255,255,0.10), inset -3px -2px 5px rgba(0,0,0,0.7);
+}
+/* spans from inside the right frame casting to inside the knob, so the two
+   are one part rather than two objects near each other */
+.knob-shaft {
+  position: absolute;
+  right: -100px; top: 22px;
+  width: 70px; height: 10px;
+  z-index: 7;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #e0c789, var(--brass) 40%, #4a3a19);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+/* brass tie rods, frame to frame */
+/* rods run frame to frame, ending well inside each casting */
+.tie-rod {
+  position: absolute;
+  left: -46px; right: -46px;
+  height: 6px; z-index: 8;
+  border-radius: 3px;
+  background: linear-gradient(180deg, var(--brass-hi), var(--brass) 42%, #6d5322 100%);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,240,200,0.5);
+}
+/* hex nuts where each rod is threaded into a frame casting */
+.tie-rod::before,
+.tie-rod::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 13px; height: 13px;
+  transform: translateY(-50%);
+  border-radius: 3px;
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255,246,220,0.7), rgba(255,246,220,0) 46%),
+    linear-gradient(150deg, #cfae67, #4a3a17);
+  box-shadow: inset 0 0 3px rgba(0,0,0,0.6), 0 2px 3px rgba(0,0,0,0.55);
+}
+.tie-rod::before { left: -5px; }
+.tie-rod::after  { right: -5px; }
+
+/* upper rod sits between the rail and the roller */
+.tie-rod.top { top: -12px; }
+/* lower rod runs below the bail, still inside the frames (bottom edge 90px) */
+.tie-rod.bottom { bottom: -26px; }
+/* B2's third rod, doubled up behind the upper one */
+.tie-rod.mid { display: none; top: -22px; height: 5px; }
+
+/* the gauge is bolted across the front of both frames, so its ends run
+   past the platen and onto the castings */
+.scale {
+  position: absolute;
+  left: -40px; right: -40px; bottom: -1px;
+  height: 9px; z-index: 6;
+  border-radius: 2px;
+  background:
+    repeating-linear-gradient(90deg, rgba(60,40,10,0.8) 0 1px, rgba(0,0,0,0) 1px 11px),
+    linear-gradient(180deg, var(--brass-hi) 0%, var(--brass) 44%, var(--brass-lo) 100%);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,240,200,0.45);
+}
+/* the bolts holding the gauge to each casting */
+.scale::before,
+.scale::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 10px; height: 10px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background:
+    linear-gradient(0deg, rgba(0,0,0,0.7) 46%, rgba(0,0,0,0) 47% 53%, rgba(0,0,0,0.7) 54%),
+    radial-gradient(circle at 34% 30%, rgba(255,246,220,0.65), rgba(255,246,220,0) 52%),
+    linear-gradient(150deg, #c2a463, #4c3d1f);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+.scale::before { left: 2px; }
+.scale::after  { right: 2px; }
+
+.margin-stop {
+  position: absolute; bottom: -6px;
+  width: 12px; height: 18px; z-index: 8;
+  border-radius: 2px 2px 4px 4px;
+  background: linear-gradient(180deg, #e6cd90, var(--brass) 44%, #4c3a18);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.55);
+}
+.margin-stop.ms-l { left: 76px; }
+.margin-stop.ms-r { right: 76px; }
+
+.bail {
+  position: absolute;
+  left: 30px; right: 30px; bottom: -14px;
+  height: 8px; z-index: 7;
+  border-radius: 4px;
+  background: linear-gradient(180deg, var(--steel-hi) 0%, var(--steel) 34%, var(--steel-lo) 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 6px 12px rgba(0,0,0,0.45);
+}
+/* Bail arms are long enough, and splayed far enough, that their pivot
+   buttons land on the end-frame castings. The bail hangs off the frames;
+   it is not a bar floating in front of the platen. */
+.arm {
+  position: absolute; top: -36px;
+  width: 7px; height: 46px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #d3d8dd, #838890 45%, #3a3d42);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+.arm.l { left: -38px;  transform: rotate(26deg);  transform-origin: 50% 100%; }
+.arm.r { right: -38px; transform: rotate(-26deg); transform-origin: 50% 100%; }
+.arm::before {
+  content: "";
+  position: absolute;
+  top: -6px; left: 50%;
+  width: 13px; height: 13px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 30%, rgba(255,244,214,0.7), rgba(255,244,214,0) 44%),
+    linear-gradient(150deg, var(--brass), #34373c);
+  box-shadow: inset 0 0 4px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.5);
+}
+.roller {
+  position: absolute; top: 50%;
+  width: 42px; height: 20px;
+  border-radius: 10px / 9px;
+  transform: translateY(-50%);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0) 34%),
+    linear-gradient(180deg, #3a3a3d 0%, var(--rubber) 48%, #131315 100%);
+  box-shadow: inset 0 -3px 6px rgba(0,0,0,0.7), 0 3px 7px rgba(0,0,0,0.5);
+}
+.roller.r1 { left: 22%; }
+.roller.r2 { right: 22%; }
+
+/* ink spatter across the assembly */
+.carriage::after {
+  content: "";
+  position: absolute;
+  inset: -24px -70px -34px -70px;
+  z-index: 10;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 12% 74%, rgba(10,8,14,0.55) 0 2.4px, rgba(0,0,0,0) 3.6px),
+    radial-gradient(circle at 21% 62%, rgba(10,8,14,0.4) 0 1.2px, rgba(0,0,0,0) 2px),
+    radial-gradient(circle at 84% 30%, rgba(10,8,14,0.5) 0 2px, rgba(0,0,0,0) 3.2px),
+    radial-gradient(circle at 89% 40%, rgba(10,8,14,0.35) 0 1px, rgba(0,0,0,0) 1.8px),
+    radial-gradient(circle at 57% 18%, rgba(10,8,14,0.3) 0 1.4px, rgba(0,0,0,0) 2.4px);
+}
+
+/* ============================================================
+   CARRIAGE RETURN ARM - rebuilt as a real linkage.
+   Shared skeleton: a mounting bracket bolted to the left frame,
+   a pivot boss, a quadrant the arm swings against, and an arm
+   group (shaft -> elbow -> grip) that rotates about the boss.
+   ============================================================ */
+
+.ret {
+  position: absolute;
+  left: -196px; top: -34px;
+  width: 190px; height: 150px;
+  padding: 0; border: 0; background: none;
+  cursor: pointer;
+  z-index: 9;
+}
+.ret:focus-visible { outline: 2px solid rgba(232,207,146,0.8); outline-offset: 4px; }
+
+/* bracket bolted onto the frame casting */
+.ret-bracket {
+  position: absolute;
+  right: 14px; top: 58px;
+  width: 46px; height: 34px;
+  border-radius: 5px 3px 3px 6px;
+  background:
+    linear-gradient(180deg, rgba(255,240,200,0.30) 0 12%, rgba(0,0,0,0) 30%),
+    linear-gradient(158deg, #8a7647 0%, #4d453a 46%, #201d1a 100%);
+  box-shadow: inset 0 1px 0 rgba(255,236,190,0.3), 0 4px 9px rgba(0,0,0,0.55);
+}
+.ret-bracket::after {
+  content: "";
+  position: absolute;
+  right: 7px; bottom: 6px;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background:
+    linear-gradient(0deg, rgba(0,0,0,0.7) 46%, rgba(0,0,0,0) 47% 53%, rgba(0,0,0,0.7) 54%),
+    linear-gradient(150deg, #c2a463, #4c3d1f);
+}
+
+/* Quadrant plate the arm sweeps across. It is a small sector bolted flat
+   to the frame casting, not a fan standing off it: it sits inside the
+   casting's outline, with three stop notches cut into its arc. */
+.ret-quadrant {
+  position: absolute;
+  right: 20px; top: 44px;
+  width: 46px; height: 46px;
+  border-radius: 100% 0 0 0;
+  background:
+    /* stop notches bitten out of the curved edge */
+    radial-gradient(circle at 6% 46%, rgba(0,0,0,0.55) 0 3px, rgba(0,0,0,0) 3.6px),
+    radial-gradient(circle at 26% 16%, rgba(0,0,0,0.55) 0 3px, rgba(0,0,0,0) 3.6px),
+    radial-gradient(circle at 58% 2%, rgba(0,0,0,0.5) 0 2.6px, rgba(0,0,0,0) 3.2px),
+    /* the machined arc face */
+    radial-gradient(120% 120% at 100% 100%,
+      rgba(255,240,200,0.18) 0 46%, rgba(0,0,0,0.32) 62%, rgba(0,0,0,0.5) 100%),
+    linear-gradient(150deg, #6d603c 0%, #3c372e 52%, #1b1916 100%);
+  box-shadow: inset 0 1px 0 rgba(255,236,190,0.2), 0 3px 6px rgba(0,0,0,0.5);
+}
+
+/* the pivot the arm turns on */
+.ret-boss {
+  position: absolute;
+  right: 14px; top: 78px;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255,246,220,0.8), rgba(255,246,220,0) 34%),
+    linear-gradient(150deg, var(--brass-hi), var(--brass) 44%, #43350f);
+  box-shadow: inset 0 0 5px rgba(0,0,0,0.5), 0 3px 6px rgba(0,0,0,0.5);
+}
+.ret-boss::after {
+  content: "";
+  position: absolute; inset: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, #3a3126, #100d08 70%);
+}
+
+/* The swinging group. Its rotation origin is the centre of the pivot boss,
+   so the arm turns in the boss rather than beside it. */
+.ret-arm {
+  position: absolute;
+  right: 27px; top: 86px;
+  width: 132px; height: 10px;
+  transform-origin: 100% 50%;
+  transform: rotate(-66deg);
+  transition: transform 130ms cubic-bezier(0.22, 0.9, 0.3, 1.2);
+}
+.rig:hover .ret-arm { transform: rotate(-58deg); }
+.ret:active .ret-arm { transform: rotate(-46deg); }
+
+.ret-shaft {
+  position: absolute;
+  inset: 0;
+  border-radius: 5px;
+  background: linear-gradient(180deg, var(--nickel-hi) 0%, var(--nickel) 34%, #4c5157 78%, #24272b 100%);
+  box-shadow: 0 3px 7px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.4);
+}
+.ret-elbow, .ret-grip { position: absolute; }
+
+/* ---------- B1: swept arm, turned bakelite ball ---------- */
+.b1 .ret-shaft {
+  /* tapers from the pivot out to the grip */
+  clip-path: polygon(0 18%, 100% 0, 100% 100%, 0 82%);
+}
+.b1 .ret-grip {
+  left: -20px; top: 50%;
+  width: 30px; height: 30px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 26%, rgba(255,255,255,0.55), rgba(255,255,255,0) 42%),
+    radial-gradient(70% 70% at 60% 70%, #3b2f26, #120d09 78%);
+  box-shadow: inset -3px -3px 7px rgba(0,0,0,0.7), 0 4px 8px rgba(0,0,0,0.55);
+}
+/* wear ring where a thumb has polished the ball for fifty years */
+.b1 .ret-grip::after {
+  content: "";
+  position: absolute; inset: 5px 6px 12px 5px;
+  border-radius: 50%;
+  background: radial-gradient(60% 60% at 40% 34%, rgba(226,206,170,0.22), rgba(0,0,0,0) 70%);
+}
+
+/* ---------- B2: flat blade arm, knurled cross-bar ---------- */
+.b2 .ret-arm { height: 14px; }
+.b2 .ret-shaft {
+  clip-path: polygon(0 0, 100% 26%, 100% 74%, 0 100%);
+  background:
+    repeating-linear-gradient(90deg, rgba(0,0,0,0.12) 0 9px, rgba(255,255,255,0.06) 9px 18px),
+    linear-gradient(180deg, var(--nickel-hi) 0%, var(--nickel) 34%, #4c5157 78%, #24272b 100%);
+}
+/* lightening holes pierced through the blade */
+.b2 .ret-elbow {
+  left: 18px; top: 50%;
+  width: 62px; height: 8px;
+  transform: translateY(-50%);
+  background:
+    radial-gradient(circle at 12% 50%, rgba(0,0,0,0.85) 0 3.4px, rgba(255,255,255,0.18) 4px, rgba(0,0,0,0) 5px),
+    radial-gradient(circle at 50% 50%, rgba(0,0,0,0.85) 0 3.4px, rgba(255,255,255,0.18) 4px, rgba(0,0,0,0) 5px),
+    radial-gradient(circle at 88% 50%, rgba(0,0,0,0.85) 0 3.4px, rgba(255,255,255,0.18) 4px, rgba(0,0,0,0) 5px);
+}
+.b2 .ret-grip {
+  left: -12px; top: 50%;
+  width: 16px; height: 54px;
+  transform: translateY(-50%);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.28) 0 16%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.5) 100%),
+    repeating-linear-gradient(180deg, #4a4034 0 3px, #17120d 3px 6px);
+  box-shadow: inset -4px 0 8px rgba(0,0,0,0.7), 0 4px 9px rgba(0,0,0,0.55);
+}
+
+/* ---------- B3: dog-legged arm, tube grip parallel to the platen ---------- */
+.b3 .ret-shaft { height: 9px; top: 1px; }
+.b3 .ret-elbow {
+  left: 6px; top: -13px;
+  width: 46px; height: 9px;
+  border-radius: 5px;
+  transform: rotate(38deg);
+  transform-origin: 100% 50%;
+  background: linear-gradient(180deg, var(--nickel-hi) 0%, var(--nickel) 34%, #4c5157 78%, #24272b 100%);
+  box-shadow: 0 3px 7px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.4);
+}
+.b3 .ret-grip {
+  left: -44px; top: -30px;
+  width: 22px; height: 62px;
+  border-radius: 11px / 10px;
+  transform: rotate(38deg);
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.3) 0 14%, rgba(0,0,0,0) 44%, rgba(0,0,0,0.55) 100%),
+    linear-gradient(180deg, #453a30 0%, #241c15 46%, #0e0a07 100%);
+  box-shadow: inset -5px 0 9px rgba(0,0,0,0.7), 0 5px 10px rgba(0,0,0,0.55);
+}
+/* chipped bakelite at the tube's end */
+.b3 .ret-grip::after {
+  content: "";
+  position: absolute;
+  left: 3px; top: 4px;
+  width: 9px; height: 7px;
+  border-radius: 40% 60% 50% 50%;
+  background: rgba(206,186,150,0.35);
+}
+
+/* ---------- B4: light rod, coil return spring, thumb paddle ---------- */
+.b4 .ret-arm { height: 7px; top: 88px; }
+.b4 .ret-shaft {
+  border-radius: 4px;
+  background: linear-gradient(180deg, #eae0c4 0%, var(--brass) 40%, #48360f 100%);
+}
+/* the coil spring wound around the pivot */
+.b4 .ret-spring {
+  position: absolute;
+  right: 10px; top: 74px;
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background:
+    repeating-conic-gradient(from 0deg at 50% 50%,
+      rgba(232,207,146,0.75) 0deg 5deg, rgba(0,0,0,0) 5deg 16deg);
+  -webkit-mask: radial-gradient(circle, rgba(0,0,0,0) 0 9px, #000 10px 16px, rgba(0,0,0,0) 17px);
+          mask: radial-gradient(circle, rgba(0,0,0,0) 0 9px, #000 10px 16px, rgba(0,0,0,0) 17px);
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.6));
+}
+.b4 .ret-grip {
+  left: -26px; top: 50%;
+  width: 40px; height: 22px;
+  transform: translateY(-50%) rotate(-8deg);
+  border-radius: 5px 9px 9px 5px;
+  background:
+    linear-gradient(200deg, rgba(255,255,255,0.12) 0 22%, rgba(0,0,0,0) 24%),
+    radial-gradient(70% 60% at 34% 28%, #4a4139, #16110c 76%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), 0 4px 8px rgba(0,0,0,0.55);
+}
+/* thumb-worn face on the paddle */
+.b4 .ret-grip::after {
+  content: "";
+  position: absolute; inset: 4px 8px 7px 6px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, rgba(222,204,170,0.20), rgba(0,0,0,0) 70%);
+}
+.ret-spring { display: none; }
+.b4 .ret-spring { display: block; }
+
+/* ============================================================
+   PER-BUILD FRAME DIFFERENCES
+   ============================================================ */
+
+/* B1 - two rods, tallest frames, polished brass */
+.b1 .margin-stop { display: block; }
+
+/* B2 - three rods, frames pierced with lightening holes */
+.b2 .tie-rod.mid { display: block; }
+.b2 .side {
+  background:
+    radial-gradient(60% 34% at 30% 12%, rgba(255,238,200,0.28), rgba(255,238,200,0) 58%),
+    /* pierced holes through the casting, showing desk behind */
+    radial-gradient(circle at 50% 12%, rgba(0,0,0,0.9) 0 7px, rgba(255,236,190,0.28) 8px, rgba(0,0,0,0) 9px),
+    radial-gradient(circle at 50% 88%, rgba(0,0,0,0.9) 0 6px, rgba(255,236,190,0.25) 7px, rgba(0,0,0,0) 8px),
+    radial-gradient(circle at 24% 30%, rgba(0,0,0,0.5) 0 1.8px, rgba(0,0,0,0) 3px),
+    radial-gradient(circle at 74% 62%, rgba(0,0,0,0.45) 0 1.4px, rgba(0,0,0,0) 2.6px),
+    linear-gradient(158deg, #8a7647 0%, #4d453a 44%, #201d1a 100%);
+}
+.b2 .screw.a, .b2 .screw.b { display: none; }
+
+/* B3 - nickel frames with brass fittings, exposed line-space ratchet */
+.b3 .side {
+  background:
+    radial-gradient(60% 34% at 30% 12%, rgba(240,248,255,0.32), rgba(240,248,255,0) 58%),
+    radial-gradient(circle at 28% 34%, rgba(0,0,0,0.45) 0 1.6px, rgba(0,0,0,0) 2.8px),
+    radial-gradient(circle at 70% 70%, rgba(0,0,0,0.4) 0 1.8px, rgba(0,0,0,0) 3px),
+    linear-gradient(158deg, #9aa3ac 0%, #4a4f55 46%, #1c1f23 100%);
+}
+.b3 .ratchet { display: block; }
+.b3 .margin-stop { display: block; }
+
+/* B4 - tarnished brass with verdigris, lightest frames */
+.b4 .side {
+  background:
+    radial-gradient(60% 34% at 30% 12%, rgba(255,238,200,0.22), rgba(255,238,200,0) 58%),
+    /* verdigris crawling out of the pits */
+    radial-gradient(ellipse 9px 6px at 30% 66%, rgba(96,148,116,0.5) 0 60%, rgba(0,0,0,0) 100%),
+    radial-gradient(ellipse 6px 5px at 72% 26%, rgba(88,138,110,0.45) 0 60%, rgba(0,0,0,0) 100%),
+    radial-gradient(ellipse 5px 9px at 18% 40%, rgba(80,126,100,0.35) 0 60%, rgba(0,0,0,0) 100%),
+    radial-gradient(circle at 52% 82%, rgba(0,0,0,0.5) 0 2.2px, rgba(0,0,0,0) 3.6px),
+    linear-gradient(158deg, #7d6b41 0%, #453e33 44%, #1c1a17 100%);
+}
+.b4 .tie-rod {
+  background: linear-gradient(180deg, #d8c08a, #94773a 42%, #4c3a16 100%);
+}
+.b4 .scale {
+  background:
+    repeating-linear-gradient(90deg, rgba(40,26,4,0.85) 0 1px, rgba(0,0,0,0) 1px 11px),
+    linear-gradient(180deg, #d9c08a 0%, #9d8140 46%, #4e3c18 100%);
+}
+
+/* line-space ratchet wheel, B3 only */
+.ratchet {
+  display: none;
+  position: absolute;
+  right: -76px; top: 6px;
+  width: 40px; height: 40px;
+  z-index: 7;
+  border-radius: 50%;
+  background:
+    repeating-conic-gradient(from 0deg at 50% 50%,
+      #6d7278 0deg 7deg, #1a1c20 7deg 14deg),
+    radial-gradient(circle at 36% 30%, rgba(255,255,255,0.4), rgba(255,255,255,0) 50%);
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.7), 0 3px 7px rgba(0,0,0,0.55);
+}
+.ratchet::after {
+  content: "";
+  position: absolute; inset: 11px;
+  border-radius: 50%;
+  background: linear-gradient(150deg, var(--brass), #40320f 72%);
+  box-shadow: inset 0 0 4px rgba(0,0,0,0.7);
+}
+
+/* --- sheet, for scale --- */
+.sheet {
+  position: relative;
+  z-index: 2;
+  width: 470px; max-width: 84%;
+  height: 168px;
+  margin: -10px auto 0;
+  padding: 26px 30px;
+  color: var(--ink);
+  font-size: 15px; line-height: 1.7;
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(90% 70% at 30% 0%, rgba(255,255,255,0.7), rgba(255,255,255,0) 62%),
+    linear-gradient(180deg, var(--paper-lit), var(--paper) 40%, #e7ded0 100%);
+  box-shadow: 0 18px 34px rgba(0,0,0,0.5), 0 2px 0 rgba(0,0,0,0.25);
+}
+.sheet span { opacity: 0.86; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Brass tie-rod carriage - four builds</h1>
+  <p>All four keep the P2 open frame: brass rods spanning frame to frame, patinated castings, brass line gauge, pitting and ink spatter. What changes is the frame detail and, in each case, the carriage return arm, which is now a real linkage: a bracket bolted to the frame, a pivot boss, a notched quadrant the arm sweeps against, and a shaft-elbow-grip group that swings about the boss. Hover a rig for the half-throw, press the arm for the full throw.</p>
+  <p style="margin-top:10px">Nothing floats. The end castings now run from the rail above the roller down past the bail, and every part lands on one of them: rods end in hex nuts inside the castings, the gauge is bolted across both with visible bolt heads, the bail hangs from arms whose pivot buttons sit on the castings, the feed knob is joined by a shaft, and the return arm's bracket, quadrant and boss are all mounted flat on the left casting.</p>
+</header>
+
+<section class="option">
+  <div class="label"><span class="tag">B1</span> Swept arm, bakelite ball <span class="note">simplest silhouette; the ball reads instantly as a handle</span></div>
+  <ul class="bullets">
+    <li><b>Arm:</b> shaft tapers from the pivot outward, ending in a turned bakelite ball with a thumb-polished wear ring.</li>
+    <li><b>Frame:</b> two rods, three screws per casting, margin stops on the gauge.</li>
+  </ul>
+  <div class="rig b1" data-rig></div>
+</section>
+
+<section class="option">
+  <div class="label"><span class="tag">B2</span> Pierced blade, knurled cross-bar <span class="note">most machined-looking; heaviest hardware read</span></div>
+  <ul class="bullets">
+    <li><b>Arm:</b> flat tapered blade with three lightening holes punched through it, ending in a vertical knurled bar you grab across, not a knob.</li>
+    <li><b>Frame:</b> third mid rod, and the castings themselves are pierced so the desk shows through them.</li>
+  </ul>
+  <div class="rig b2" data-rig></div>
+</section>
+
+<section class="option">
+  <div class="label"><span class="tag">B3</span> Dog-leg arm, tube grip <span class="note">most authentic geometry: the grip lies parallel to the platen</span></div>
+  <ul class="bullets">
+    <li><b>Arm:</b> shaft bends at an elbow into a second segment, carrying a long bakelite tube grip angled along the platen, chipped at one end.</li>
+    <li><b>Frame:</b> nickel castings with brass fittings, plus an exposed line-space ratchet wheel outboard on the right.</li>
+  </ul>
+  <div class="rig b3" data-rig></div>
+</section>
+
+<section class="option">
+  <div class="label"><span class="tag">B4</span> Light rod, coil spring, thumb paddle <span class="note">most delicate; the spring sells it as sprung, not just decorative</span></div>
+  <ul class="bullets">
+    <li><b>Arm:</b> thin brass rod with a visible coil return spring wound around the pivot, ending in a flat thumb paddle with a worn face.</li>
+    <li><b>Frame:</b> tarnished brass with verdigris creeping out of the pits; darkest, oldest-looking build.</li>
+  </ul>
+  <div class="rig b4" data-rig></div>
+</section>
+
+<script>
+// One markup template for all four, so the builds cannot drift apart.
+const RIG = `
+  <div class="carriage">
+    <div class="rail"></div>
+    <div class="side left"><i class="screw a"></i><i class="screw b"></i><i class="screw c"></i></div>
+    <div class="side right"><i class="screw a"></i><i class="screw b"></i><i class="screw c"></i></div>
+    <div class="platen"><i class="platen-wear"></i></div>
+    <i class="collar l"></i>
+    <i class="collar r"></i>
+    <i class="ratchet"></i>
+    <i class="knob-shaft"></i>
+    <div class="knob"></div>
+    <i class="tie-rod top"></i>
+    <i class="tie-rod mid"></i>
+    <i class="tie-rod bottom"></i>
+    <div class="scale"></div>
+    <i class="margin-stop ms-l"></i>
+    <i class="margin-stop ms-r"></i>
+    <div class="bail">
+      <i class="arm l"></i><i class="arm r"></i>
+      <span class="roller r1"></span><span class="roller r2"></span>
+    </div>
+    <button class="ret" type="button" aria-label="Carriage return">
+      <i class="ret-bracket"></i>
+      <i class="ret-quadrant"></i>
+      <i class="ret-spring"></i>
+      <i class="ret-boss"></i>
+      <span class="ret-arm">
+        <i class="ret-shaft"></i>
+        <i class="ret-elbow"></i>
+        <i class="ret-grip"></i>
+      </span>
+    </button>
+  </div>
+  <div class="sheet"><span>the quick brown fox jumps over<br>the lazy dog. 1234567890</span></div>
+`;
+document.querySelectorAll('[data-rig]').forEach(el => { el.innerHTML = RIG; });
+</script>
+
+</body>
+</html>

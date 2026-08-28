@@ -1,0 +1,35 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Word wrap regression</title>
+<body data-result="RUNNING">RUNNING
+<iframe id="app" src="../index.html" hidden></iframe>
+<script>
+const frame = document.querySelector('#app');
+frame.addEventListener('load', () => {
+  const win = frame.contentWindow;
+  const doc = frame.contentDocument;
+  const key = value => doc.dispatchEvent(new win.KeyboardEvent('keydown', { key: value, bubbles: true }));
+  const type = value => Array.from(value).forEach(key);
+  const at = (row, col, ch) => Array.from(doc.querySelectorAll('.impression')).some(node =>
+    node.textContent === ch &&
+    node.style.getPropertyValue('--row') === String(row) &&
+    node.style.getPropertyValue('--col') === String(col));
+
+  type('x'.repeat(61) + ' WORD');
+  const friendly = at(1, 0, 'W') && at(1, 1, 'O') && at(1, 2, 'R') && at(1, 3, 'D') && !at(0, 62, 'W');
+
+  key('Enter');
+  const realism = doc.querySelector('#opt-realism');
+  realism.checked = true;
+  realism.dispatchEvent(new win.Event('change', { bubbles: true }));
+  type('x'.repeat(61) + ' WORD');
+  const hard = at(2, 62, 'W') && at(2, 63, 'O') && at(2, 64, 'R') && at(3, 0, 'D');
+
+  const pass = friendly && hard;
+  document.body.dataset.result = pass ? 'PASS' : 'FAIL';
+  const positions = Array.from(doc.querySelectorAll('.impression'))
+    .filter(node => 'WORD'.includes(node.textContent))
+    .map(node => node.textContent + '@' + node.style.getPropertyValue('--row') + ',' + node.style.getPropertyValue('--col'));
+  document.body.textContent = (pass ? 'PASS' : 'FAIL') + ': friendly=' + friendly + ', realism=' + hard + ', positions=' + positions.join('|');
+});
+</script>

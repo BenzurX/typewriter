@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typewriter - platen / carriage upgrade options</title>
+<link href="https://fonts.googleapis.com/css2?family=Cutive+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f3ece0;
+  --paper-lit: #f8f3ea;
+  --ink: #2b2622;
+  --steel: #9aa0a6;
+  --steel-hi: #e4e8ec;
+  --steel-lo: #4a4f55;
+  --rubber: #2b2b2e;
+  --brass: #b8934a;
+  --brass-hi: #e8cf92;
+  --desk: #16211c;
+  --desk-hi: #2b3d33;
+  --desk-lo: #090f0c;
+  --face: "Cutive Mono", "Courier New", monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--face);
+  color: #e2ddd2;
+  background-color: var(--desk);
+  background-image:
+    radial-gradient(110% 60% at 15% -6%, rgba(206, 255, 224, 0.12), rgba(206, 255, 224, 0) 54%),
+    repeating-linear-gradient(90deg,
+      rgba(0,0,0,0) 0 214px, rgba(0,0,0,0.62) 214px 218px,
+      rgba(150,200,168,0.07) 218px 220px, rgba(0,0,0,0) 220px 224px),
+    repeating-linear-gradient(89.3deg,
+      rgba(120,170,138,0.07) 0 2px, rgba(0,0,0,0.14) 2px 6px, rgba(0,0,0,0) 6px 14px),
+    linear-gradient(170deg, var(--desk-hi) 0%, var(--desk) 50%, var(--desk-lo) 100%);
+  background-attachment: fixed;
+}
+
+header { padding: 30px 24px 4px; max-width: 1180px; margin: 0 auto; }
+header h1 { margin: 0 0 6px; font-size: 20px; letter-spacing: 0.04em; }
+header p { margin: 0; font-size: 13px; opacity: 0.62; line-height: 1.6; }
+
+.option { max-width: 1180px; margin: 0 auto; padding: 0 24px 26px; }
+.label {
+  display: flex; align-items: baseline; gap: 12px;
+  padding: 30px 2px 4px; font-size: 14px; letter-spacing: 0.06em;
+}
+.label .tag {
+  font-size: 12px; padding: 2px 8px;
+  border: 1px solid rgba(226, 221, 210, 0.35); border-radius: 2px;
+}
+.label .note { font-size: 12px; opacity: 0.6; letter-spacing: 0; }
+.bullets { margin: 2px 2px 10px; padding-left: 18px; font-size: 12px; opacity: 0.62; line-height: 1.7; }
+
+/* ============================================================
+   SHARED RIG. Every variant uses the same markup; the variant
+   class only restyles it and shows/hides the connective pieces.
+   ============================================================ */
+
+.rig {
+  position: relative;
+  width: 700px;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 46px 0 0;
+}
+
+.carriage {
+  position: relative;
+  width: 560px;
+  height: 58px;
+  margin: 0 auto;
+  z-index: 4;
+  filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.55));
+}
+
+/* --- the rail the whole carriage rides on, running past both ends --- */
+.rail {
+  position: absolute;
+  left: -86px; right: -86px;
+  top: 40px;
+  height: 13px;
+  z-index: 0;
+  border-radius: 3px;
+  background:
+    linear-gradient(180deg, var(--steel-hi) 0%, var(--steel) 30%, var(--steel-lo) 78%, #2a2d31 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 4px 8px rgba(0,0,0,0.5);
+}
+/* rack teeth under the rail: the escapement has something to bite */
+.rail::after {
+  content: "";
+  position: absolute;
+  left: 40px; right: 40px; top: 100%;
+  height: 7px;
+  background: repeating-linear-gradient(90deg,
+    #3a3d42 0 4px, #14161a 4px 5px, #23262b 5px 9px, #0e1013 9px 10px);
+  box-shadow: inset 0 -2px 4px rgba(0,0,0,0.7);
+}
+
+/* --- carriage end frames: the castings the platen shaft runs through --- */
+.side {
+  position: absolute;
+  top: -14px;
+  width: 52px;
+  height: 92px;
+  z-index: 5;
+  border-radius: 9px 9px 6px 6px;
+  background:
+    radial-gradient(70% 40% at 32% 14%, rgba(255,255,255,0.30), rgba(255,255,255,0) 62%),
+    linear-gradient(160deg, #6d7076 0%, #43464b 46%, #1e2024 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.3),
+    inset -4px -4px 10px rgba(0,0,0,0.6),
+    0 6px 12px rgba(0,0,0,0.5);
+}
+.side.left  { left: -46px; }
+.side.right { right: -46px; }
+
+/* the bearing boss the platen shaft passes through */
+.side::before {
+  content: "";
+  position: absolute;
+  top: 26px; left: 50%;
+  width: 30px; height: 30px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 36% 30%, rgba(255,255,255,0.5), rgba(255,255,255,0) 46%),
+    linear-gradient(150deg, #55585d, #26282c 70%);
+  box-shadow: inset 0 0 7px rgba(0,0,0,0.75), 0 1px 0 rgba(255,255,255,0.16);
+}
+
+.screw {
+  position: absolute;
+  width: 11px; height: 11px;
+  border-radius: 50%;
+  background:
+    linear-gradient(0deg, rgba(0,0,0,0.75) 46%, rgba(0,0,0,0) 47% 53%, rgba(0,0,0,0.75) 54%),
+    radial-gradient(circle at 34% 30%, rgba(255,255,255,0.6), rgba(255,255,255,0) 52%),
+    linear-gradient(150deg, #8d9198, #3c3f44);
+  box-shadow: inset 0 0 3px rgba(0,0,0,0.6), 0 1px 1px rgba(0,0,0,0.5);
+}
+.screw.a { top: 8px;  left: 8px; }
+.screw.b { top: 8px;  right: 8px; }
+.screw.c { bottom: 9px; left: 50%; transform: translateX(-50%) rotate(38deg); }
+
+/* --- platen roller --- */
+.platen {
+  position: absolute;
+  inset: 0 0 12px 0;
+  z-index: 3;
+  border-radius: 24px / 22px;
+  background:
+    linear-gradient(172deg,
+      rgba(0,0,0,0) 0 18%, rgba(218,218,222,0.10) 19%,
+      rgba(0,0,0,0) 20% 57%, rgba(4,4,6,0.24) 58%, rgba(0,0,0,0) 60%),
+    linear-gradient(180deg,
+      rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.06) 16%,
+      rgba(0,0,0,0.18) 46%, rgba(0,0,0,0.52) 82%, rgba(0,0,0,0.34) 100%),
+    linear-gradient(96deg, #4b4a4d 0%, #6a686c 12%, #3c3b3f 62%, #232326 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.28),
+    inset 0 -6px 14px rgba(0,0,0,0.6),
+    0 2px 0 rgba(0,0,0,0.5);
+}
+
+/* platen wear layer: type bruising, cleaning scratches, dents */
+.platen-wear {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    /* the type-strike band: a duller, bruised stripe where the slugs land */
+    linear-gradient(180deg,
+      rgba(0,0,0,0) 0 52%, rgba(10,9,11,0.30) 58%, rgba(10,9,11,0.34) 70%, rgba(0,0,0,0) 78%),
+    /* long cleaning scratches */
+    repeating-linear-gradient(95.5deg,
+      rgba(0,0,0,0) 0 47px, rgba(226,226,232,0.16) 48px, rgba(6,6,8,0.28) 49px, rgba(0,0,0,0) 51px),
+    repeating-linear-gradient(84.5deg,
+      rgba(0,0,0,0) 0 113px, rgba(220,220,228,0.10) 114px, rgba(0,0,0,0) 116px),
+    /* pits and dings */
+    radial-gradient(circle at 18% 62%, rgba(0,0,0,0.5) 0 1.6px, rgba(255,255,255,0.10) 2px, rgba(0,0,0,0) 3px),
+    radial-gradient(circle at 41% 38%, rgba(0,0,0,0.42) 0 1.2px, rgba(0,0,0,0) 2.4px),
+    radial-gradient(circle at 63% 71%, rgba(0,0,0,0.46) 0 2px, rgba(255,255,255,0.08) 2.4px, rgba(0,0,0,0) 3.6px),
+    radial-gradient(circle at 77% 30%, rgba(0,0,0,0.38) 0 1.4px, rgba(0,0,0,0) 2.6px),
+    radial-gradient(circle at 88% 58%, rgba(0,0,0,0.44) 0 1.8px, rgba(0,0,0,0) 3px),
+    radial-gradient(circle at 30% 82%, rgba(0,0,0,0.34) 0 1.2px, rgba(0,0,0,0) 2.2px),
+    /* rubber grain */
+    repeating-linear-gradient(178deg,
+      rgba(0,0,0,0) 0 6px, rgba(235,235,238,0.05) 7px, rgba(0,0,0,0) 8px 13px);
+}
+
+/* platen end collars */
+.collar {
+  position: absolute;
+  top: -5px;
+  width: 34px;
+  height: 68px;
+  z-index: 6;
+  border-radius: 50% / 46%;
+  background:
+    radial-gradient(60% 50% at 34% 26%, rgba(255,255,255,0.5), rgba(255,255,255,0) 62%),
+    linear-gradient(150deg, #7c7a80 0%, #46454a 55%, #232226 100%);
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.6);
+}
+.collar.l { left: -16px; }
+.collar.r { right: -16px; }
+
+/* fluted feed knob, outboard of the right end frame */
+.knob {
+  position: absolute;
+  right: -104px;
+  top: -2px;
+  width: 34px;
+  height: 54px;
+  z-index: 8;
+  border-radius: 8px 48% 48% 8px / 9px 50% 50% 9px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.22), transparent 24%, rgba(0,0,0,0.42) 82%),
+    repeating-linear-gradient(180deg, #3b383c 0 4px, #171619 4px 8px);
+  box-shadow:
+    inset 4px 2px 7px rgba(255,255,255,0.10),
+    inset -10px -4px 12px rgba(0,0,0,0.72),
+    0 4px 9px rgba(0,0,0,0.52);
+}
+.knob::after {
+  content: "";
+  position: absolute;
+  right: 0; top: 1px;
+  width: 11px; height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #484449 0%, #232125 38%, #101013 78%, #28262a 100%);
+  box-shadow: inset 3px 1px 4px rgba(255,255,255,0.10), inset -3px -2px 5px rgba(0,0,0,0.7);
+}
+/* the shaft between knob and end frame: the piece that makes them one part */
+.knob-shaft {
+  position: absolute;
+  right: -72px; top: 22px;
+  width: 40px; height: 10px;
+  z-index: 7;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #b7bcc2, #6c7076 40%, #26282c);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+/* --- line-gauge / paper scale across the front --- */
+.scale {
+  position: absolute;
+  left: 26px; right: 26px;
+  bottom: -1px;
+  height: 9px;
+  z-index: 6;
+  border-radius: 2px;
+  background:
+    repeating-linear-gradient(90deg,
+      rgba(0,0,0,0.72) 0 1px, rgba(0,0,0,0) 1px 11px),
+    linear-gradient(180deg, #cfd4d9 0%, #8d9299 42%, #4a4e54 100%);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.4);
+}
+
+/* --- paper bail, with arms that visibly tie back to the end frames --- */
+.bail {
+  position: absolute;
+  left: 30px; right: 30px;
+  bottom: -20px;
+  height: 8px;
+  z-index: 7;
+  border-radius: 4px;
+  background: linear-gradient(180deg, var(--steel-hi) 0%, var(--steel) 34%, var(--steel-lo) 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 6px 12px rgba(0,0,0,0.45);
+}
+.arm {
+  position: absolute;
+  top: -30px;
+  width: 7px;
+  height: 40px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #d3d8dd, #838890 45%, #3a3d42);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+.arm.l { left: -14px;  transform: rotate(19deg);  transform-origin: 50% 100%; }
+.arm.r { right: -14px; transform: rotate(-19deg); transform-origin: 50% 100%; }
+/* pivot buttons where the arms meet the frames */
+.arm::before {
+  content: "";
+  position: absolute;
+  top: -6px; left: 50%;
+  width: 13px; height: 13px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, rgba(255,255,255,0.7), rgba(255,255,255,0) 44%),
+              linear-gradient(150deg, #9aa0a6, #34373c);
+  box-shadow: inset 0 0 4px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.5);
+}
+.roller {
+  position: absolute;
+  top: 50%;
+  width: 42px; height: 20px;
+  border-radius: 10px / 9px;
+  transform: translateY(-50%);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0) 34%),
+    linear-gradient(180deg, #3a3a3d 0%, var(--rubber) 48%, #131315 100%);
+  box-shadow: inset 0 -3px 6px rgba(0,0,0,0.7), 0 3px 7px rgba(0,0,0,0.5);
+}
+.roller.r1 { left: 22%; }
+.roller.r2 { right: 22%; }
+
+/* --- carriage return lever, hinged into the left end frame --- */
+.lever {
+  position: absolute;
+  top: 12px;
+  left: -128px;
+  width: 104px; height: 12px;
+  padding: 0; border: 0;
+  cursor: pointer;
+  border-radius: 6px;
+  transform-origin: 100% 50%;
+  transform: rotate(-74deg);
+  z-index: 9;
+  background: linear-gradient(180deg, var(--steel-hi) 0%, var(--steel) 40%, var(--steel-lo) 100%);
+  box-shadow: 0 4px 9px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.3);
+  transition: transform 120ms cubic-bezier(0.22, 0.9, 0.3, 1.2);
+}
+.rig:hover .lever { transform: rotate(-68deg); }
+.paddle {
+  position: absolute;
+  left: -10px; top: -7px;
+  width: 26px; height: 26px;
+  border-radius: 5px;
+  background:
+    linear-gradient(200deg, rgba(255,255,255,0.10) 0 24%, rgba(0,0,0,0) 25%),
+    radial-gradient(70% 60% at 34% 28%, #4a4441, #17130f 78%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 3px 6px rgba(0,0,0,0.5);
+}
+.hinge {
+  position: absolute;
+  right: -8px; top: -6px;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255,255,255,0.72), rgba(255,255,255,0) 30%),
+    linear-gradient(150deg, var(--steel-hi), var(--steel) 45%, var(--steel-lo));
+  box-shadow: inset 0 0 5px rgba(0,0,0,0.38), 0 3px 6px rgba(0,0,0,0.48);
+}
+/* the stay: a short brace from the hinge back down to the frame */
+.stay {
+  position: absolute;
+  right: 4px; top: 14px;
+  width: 34px; height: 6px;
+  border-radius: 3px;
+  transform: rotate(30deg);
+  transform-origin: 100% 50%;
+  background: linear-gradient(180deg, #c7ccd2, #6a6e74 46%, #2b2e33);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+/* --- optional pieces, off by default, switched on per variant --- */
+.paper-table, .tie-rod, .margin-stop { display: none; }
+
+/* paper table: the sloped plate the sheet feeds over */
+.paper-table {
+  position: absolute;
+  left: -14px; right: -14px;
+  top: 14px;
+  height: 56px;
+  z-index: 1;
+  border-radius: 10px 10px 4px 4px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.16) 0 6%, rgba(0,0,0,0) 22%),
+    linear-gradient(170deg, #575b61 0%, #34373c 44%, #191b1f 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 6px 14px rgba(0,0,0,0.55);
+}
+
+/* tie rods spanning between the two end frames, in front of the platen */
+.tie-rod {
+  position: absolute;
+  left: -30px; right: -30px;
+  height: 6px;
+  z-index: 8;
+  border-radius: 3px;
+  background: linear-gradient(180deg, var(--brass-hi), var(--brass) 42%, #6d5322 100%);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,240,200,0.5);
+}
+.tie-rod.top { top: -8px; }
+.tie-rod.bottom { bottom: -30px; }
+
+/* margin stops riding on the scale */
+.margin-stop {
+  position: absolute;
+  bottom: -6px;
+  width: 12px; height: 18px;
+  z-index: 8;
+  border-radius: 2px 2px 4px 4px;
+  background: linear-gradient(180deg, #d7dbe0, #7d8188 44%, #2f3237);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.55);
+}
+.margin-stop.ms-l { left: 76px; }
+.margin-stop.ms-r { right: 76px; }
+
+/* --- the sheet, for scale --- */
+.sheet {
+  position: relative;
+  z-index: 2;
+  width: 470px;
+  max-width: 84%;
+  height: 168px;
+  margin: -10px auto 0;
+  padding: 26px 30px;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.7;
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(90% 70% at 30% 0%, rgba(255,255,255,0.7), rgba(255,255,255,0) 62%),
+    linear-gradient(180deg, var(--paper-lit), var(--paper) 40%, #e7ded0 100%);
+  box-shadow: 0 18px 34px rgba(0,0,0,0.5), 0 2px 0 rgba(0,0,0,0.25);
+}
+.sheet span { opacity: 0.86; }
+
+/* ============================================================
+   VARIANT 1 - machined steel frames, service-worn
+   ============================================================ */
+.v1 .side {
+  background:
+    radial-gradient(70% 40% at 30% 12%, rgba(255,255,255,0.34), rgba(255,255,255,0) 60%),
+    /* rub-through: the front edge is polished bright by decades of hands */
+    linear-gradient(90deg, rgba(255,255,255,0.16) 0 5%, rgba(0,0,0,0) 12%),
+    /* scratch cluster */
+    repeating-linear-gradient(72deg,
+      rgba(0,0,0,0) 0 13px, rgba(226,230,236,0.13) 14px, rgba(0,0,0,0.22) 15px, rgba(0,0,0,0) 17px),
+    linear-gradient(160deg, #6d7076 0%, #43464b 46%, #1e2024 100%);
+}
+.v1 .side::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  /* nicks along the casting edges */
+  background:
+    radial-gradient(circle at 6% 22%, rgba(228,232,238,0.5) 0 1.4px, rgba(0,0,0,0) 2.6px),
+    radial-gradient(circle at 94% 62%, rgba(228,232,238,0.4) 0 1.2px, rgba(0,0,0,0) 2.4px),
+    radial-gradient(circle at 18% 88%, rgba(0,0,0,0.5) 0 2px, rgba(0,0,0,0) 3.4px),
+    radial-gradient(circle at 72% 8%, rgba(0,0,0,0.42) 0 1.6px, rgba(0,0,0,0) 3px);
+}
+.v1 .margin-stop { display: block; }
+
+/* ============================================================
+   VARIANT 2 - open brass tie-rod frame, heavily used
+   ============================================================ */
+.v2 .tie-rod { display: block; }
+.v2 .side {
+  width: 46px;
+  border-radius: 7px;
+  background:
+    radial-gradient(60% 34% at 30% 12%, rgba(255,238,200,0.30), rgba(255,238,200,0) 58%),
+    /* pitting */
+    radial-gradient(circle at 24% 30%, rgba(0,0,0,0.5) 0 1.8px, rgba(0,0,0,0) 3px),
+    radial-gradient(circle at 66% 52%, rgba(0,0,0,0.45) 0 1.4px, rgba(0,0,0,0) 2.6px),
+    radial-gradient(circle at 38% 74%, rgba(0,0,0,0.5) 0 2.2px, rgba(0,0,0,0) 3.6px),
+    radial-gradient(circle at 78% 84%, rgba(0,0,0,0.4) 0 1.2px, rgba(0,0,0,0) 2.4px),
+    /* patinated brass-over-steel */
+    linear-gradient(158deg, #8a7647 0%, #4d453a 44%, #201d1a 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,236,190,0.35),
+    inset -4px -4px 10px rgba(0,0,0,0.62),
+    0 6px 12px rgba(0,0,0,0.5);
+}
+.v2 .side::before {
+  background:
+    radial-gradient(circle at 36% 30%, rgba(255,244,214,0.55), rgba(255,244,214,0) 46%),
+    linear-gradient(150deg, var(--brass), #4a3c1e 72%);
+}
+.v2 .scale {
+  background:
+    repeating-linear-gradient(90deg, rgba(60,40,10,0.8) 0 1px, rgba(0,0,0,0) 1px 11px),
+    linear-gradient(180deg, var(--brass-hi) 0%, var(--brass) 44%, #5e4820 100%);
+}
+.v2 .rail {
+  background: linear-gradient(180deg, #d8dde2 0%, #8f949a 30%, #43464b 78%, #232529 100%);
+}
+/* ink spatter and finger grime across the whole assembly */
+.v2 .carriage::after {
+  content: "";
+  position: absolute;
+  inset: -20px -60px -30px -60px;
+  z-index: 9;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 12% 74%, rgba(10,8,14,0.55) 0 2.4px, rgba(0,0,0,0) 3.6px),
+    radial-gradient(circle at 21% 62%, rgba(10,8,14,0.4) 0 1.2px, rgba(0,0,0,0) 2px),
+    radial-gradient(circle at 84% 30%, rgba(10,8,14,0.5) 0 2px, rgba(0,0,0,0) 3.2px),
+    radial-gradient(circle at 89% 40%, rgba(10,8,14,0.35) 0 1px, rgba(0,0,0,0) 1.8px),
+    radial-gradient(circle at 57% 18%, rgba(10,8,14,0.3) 0 1.4px, rgba(0,0,0,0) 2.4px);
+}
+
+/* ============================================================
+   VARIANT 3 - enclosed carriage shell with paper table
+   ============================================================ */
+.v3 .paper-table { display: block; }
+.v3 .side {
+  top: -18px;
+  height: 98px;
+  border-radius: 12px 12px 5px 5px;
+  background:
+    radial-gradient(70% 36% at 30% 10%, rgba(255,255,255,0.26), rgba(255,255,255,0) 58%),
+    /* worn-bright top edge where the shell is handled */
+    linear-gradient(180deg, rgba(255,255,255,0.22) 0 4%, rgba(0,0,0,0) 14%),
+    linear-gradient(160deg, #4e5157 0%, #303338 48%, #131518 100%);
+}
+.v3 .paper-table::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  /* scuffs from every sheet that has been fed over this plate */
+  background:
+    repeating-linear-gradient(91deg,
+      rgba(0,0,0,0) 0 21px, rgba(214,220,228,0.10) 22px, rgba(0,0,0,0) 23px 44px),
+    repeating-linear-gradient(88deg,
+      rgba(0,0,0,0) 0 67px, rgba(0,0,0,0.28) 68px, rgba(0,0,0,0) 70px),
+    radial-gradient(circle at 30% 60%, rgba(0,0,0,0.35) 0 2px, rgba(0,0,0,0) 3.4px),
+    radial-gradient(circle at 71% 34%, rgba(224,230,238,0.16) 0 2.6px, rgba(0,0,0,0) 4px);
+}
+.v3 .margin-stop { display: block; }
+.v3 .scale {
+  background:
+    repeating-linear-gradient(90deg, rgba(0,0,0,0.7) 0 1px, rgba(0,0,0,0) 1px 11px),
+    linear-gradient(180deg, #b9bec4 0%, #7a7f86 42%, #3c4045 100%);
+}
+
+/* ============================================================
+   VARIANT 4 - black crinkle paint, chipped back to steel
+   ============================================================ */
+.v4 .side {
+  background:
+    /* crinkle paint texture */
+    repeating-linear-gradient(64deg, rgba(255,255,255,0.05) 0 2px, rgba(0,0,0,0.12) 2px 4px),
+    repeating-linear-gradient(-58deg, rgba(255,255,255,0.04) 0 3px, rgba(0,0,0,0.10) 3px 6px),
+    radial-gradient(70% 40% at 32% 14%, rgba(255,255,255,0.14), rgba(255,255,255,0) 60%),
+    linear-gradient(160deg, #2f3033 0%, #202124 46%, #0d0e10 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.14),
+    inset -4px -4px 10px rgba(0,0,0,0.7),
+    0 6px 12px rgba(0,0,0,0.55);
+}
+.v4 .side::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  /* paint chipped off to bright steel, plus rust freckles */
+  background:
+    radial-gradient(ellipse 7px 4px at 14% 18%, rgba(198,204,212,0.75) 0 60%, rgba(0,0,0,0) 100%),
+    radial-gradient(ellipse 5px 8px at 88% 44%, rgba(186,192,200,0.6) 0 60%, rgba(0,0,0,0) 100%),
+    radial-gradient(ellipse 9px 5px at 40% 92%, rgba(176,182,190,0.55) 0 60%, rgba(0,0,0,0) 100%),
+    radial-gradient(ellipse 4px 3px at 66% 66%, rgba(150,92,48,0.6) 0 60%, rgba(0,0,0,0) 100%),
+    radial-gradient(ellipse 3px 3px at 24% 58%, rgba(138,84,44,0.55) 0 60%, rgba(0,0,0,0) 100%),
+    radial-gradient(ellipse 6px 3px at 76% 12%, rgba(146,90,46,0.45) 0 60%, rgba(0,0,0,0) 100%);
+}
+.v4 .rail {
+  background: linear-gradient(180deg, #cfd4da 0%, #868b92 26%, #3a3d42 74%, #1a1c1f 100%);
+}
+.v4 .scale {
+  background:
+    repeating-linear-gradient(90deg, rgba(40,26,4,0.85) 0 1px, rgba(0,0,0,0) 1px 11px),
+    linear-gradient(180deg, var(--brass-hi) 0%, var(--brass) 46%, #5a441e 100%);
+}
+.v4 .bail, .v4 .arm, .v4 .stay {
+  background: linear-gradient(180deg, #55585d, #303338 44%, #141619);
+}
+.v4 .lever {
+  background:
+    repeating-linear-gradient(64deg, rgba(255,255,255,0.05) 0 2px, rgba(0,0,0,0.12) 2px 4px),
+    linear-gradient(180deg, #3a3d42 0%, #232529 40%, #101215 100%);
+}
+.v4 .margin-stop { display: block; }
+.v4 .platen-wear { opacity: 1; }
+.v4 .knob {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.16), transparent 24%, rgba(0,0,0,0.5) 82%),
+    repeating-linear-gradient(180deg, #2c2a2e 0 4px, #100f12 4px 8px);
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Platen / carriage upgrade options</h1>
+  <p>Four builds of the same assembly, all showing how the pieces join: a rail with rack teeth under the carriage, end-frame castings the platen shaft runs through, a knob shaft, bail arms pivoting back into the frames, and the return lever braced by a stay. Distress is layered per piece, not one global overlay. Hover a rig to throw the lever.</p>
+</header>
+
+<section class="option">
+  <div class="label"><span class="tag">P1</span> Machined steel frames, service-worn <span class="note">closest to what is on screen now, just properly assembled</span></div>
+  <ul class="bullets">
+    <li>End frames with bearing bosses, three screws each, polished rub-through on the front edge.</li>
+    <li>Rail runs past both ends with escapement rack teeth beneath; margin stops ride the scale.</li>
+    <li>Distress: nicks at the casting edges, angled scratch cluster, bruised type-strike band on the roller.</li>
+  </ul>
+  <div class="rig v1" data-rig></div>
+</section>
+
+<section class="option">
+  <div class="label"><span class="tag">P2</span> Open brass tie-rod frame <span class="note">most mechanical read: you can see through the machine</span></div>
+  <ul class="bullets">
+    <li>Two brass tie rods span frame to frame, one above the platen and one below the bail.</li>
+    <li>Brass-over-steel castings with patina, brass line gauge.</li>
+    <li>Distress: pitting in the castings plus ink spatter thrown across the whole assembly.</li>
+  </ul>
+  <div class="rig v2" data-rig></div>
+</section>
+
+<section class="option">
+  <div class="label"><span class="tag">P3</span> Enclosed shell with paper table <span class="note">heaviest, most solid; hides the mechanism behind a plate</span></div>
+  <ul class="bullets">
+    <li>Sloped paper table behind the platen, so the sheet visibly feeds over something.</li>
+    <li>Taller shell-style end frames with a worn-bright top edge.</li>
+    <li>Distress: feed scuffs and streaks across the table where every sheet has dragged.</li>
+  </ul>
+  <div class="rig v3" data-rig></div>
+</section>
+
+<section class="option">
+  <div class="label"><span class="tag">P4</span> Black crinkle paint, chipped to steel <span class="note">grimmest and highest contrast against the green desk</span></div>
+  <ul class="bullets">
+    <li>Crinkle-textured black paint on frames and lever, chrome rail and brass gauge for contrast.</li>
+    <li>Bail and stay darkened so the bright pieces read as the moving parts.</li>
+    <li>Distress: paint chipped back to bare steel at the corners, rust freckles, full-strength roller wear.</li>
+  </ul>
+  <div class="rig v4" data-rig></div>
+</section>
+
+<script>
+// One markup template for every variant, so the rigs cannot drift apart.
+const RIG = `
+  <div class="carriage">
+    <div class="rail"></div>
+    <div class="paper-table"></div>
+    <div class="side left"><i class="screw a"></i><i class="screw b"></i><i class="screw c"></i></div>
+    <div class="side right"><i class="screw a"></i><i class="screw b"></i><i class="screw c"></i></div>
+    <div class="platen"><i class="platen-wear"></i></div>
+    <i class="collar l"></i>
+    <i class="collar r"></i>
+    <i class="knob-shaft"></i>
+    <div class="knob"></div>
+    <i class="tie-rod top"></i>
+    <i class="tie-rod bottom"></i>
+    <div class="scale"></div>
+    <i class="margin-stop ms-l"></i>
+    <i class="margin-stop ms-r"></i>
+    <div class="bail">
+      <i class="arm l"></i><i class="arm r"></i>
+      <span class="roller r1"></span><span class="roller r2"></span>
+    </div>
+    <button class="lever" type="button" aria-label="Carriage return">
+      <i class="paddle"></i><i class="stay"></i><i class="hinge"></i>
+    </button>
+  </div>
+  <div class="sheet"><span>the quick brown fox jumps over<br>the lazy dog. 1234567890</span></div>
+`;
+document.querySelectorAll('[data-rig]').forEach(el => { el.innerHTML = RIG; });
+</script>
+
+</body>
+</html>

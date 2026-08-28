@@ -5,19 +5,63 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Typewriter</title>
 <meta name="description" content="Type on a sheet of paper in a mechanical typewriter.">
+<meta name="theme-color" content="#2b2119">
+<link rel="icon" href="assets/favicon.png" type="image/png" sizes="128x128">
+<link rel="apple-touch-icon" href="assets/favicon.png">
+<!-- Only the default typeface is preloaded. The other three are opt-in from
+     the settings card and can wait for the stylesheet to request them. -->
+<link rel="preload" href="assets/fonts/tt2020.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="style.css">
 </head>
-<body data-realism="off" data-sound="on" data-typeface="tt2020" data-ribbon="fresh">
+<body data-realism="off" data-sound="on" data-typeface="tt2020">
+
+<!-- Touch devices have no physical keyboard to listen to. Tapping the sheet
+     focuses this field, which is what raises the software keyboard; app.js
+     reads its input events and drives the same strike path. -->
+<input id="key-catcher" type="text" inputmode="text" enterkeyhint="enter"
+       autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+       aria-label="Typing surface">
 
 <div id="desk">
 
   <div id="machine">
+
+    <div id="machine-body" aria-hidden="true">
+      <i class="mb-shoulder mb-shoulder-l"></i>
+      <i class="mb-shoulder mb-shoulder-r"></i>
+      <i class="mb-spool mb-spool-l"></i>
+      <i class="mb-spool mb-spool-r"></i>
+      <i class="mb-wear"></i>
+    </div>
+
     <div id="platen-assembly">
+      <i class="carriage-rail" aria-hidden="true"></i>
+      <i class="frame frame-l" aria-hidden="true"><i class="screw screw-a"></i><i class="screw screw-b"></i><i class="screw screw-c"></i></i>
+      <i class="frame frame-r" aria-hidden="true"><i class="screw screw-a"></i><i class="screw screw-b"></i><i class="screw screw-c"></i></i>
       <div id="platen"></div>
-      <div id="bail"><span class="bail-roller"></span><span class="bail-roller"></span></div>
+      <i class="collar collar-l" aria-hidden="true"></i>
+      <i class="collar collar-r" aria-hidden="true"></i>
+      <div id="bail">
+        <i class="bail-arm bail-arm-l"></i><i class="bail-arm bail-arm-r"></i>
+        <span class="bail-roller bail-roller-l"></span><span class="bail-roller bail-roller-r"></span>
+      </div>
+      <i class="tie-rod tie-rod-bottom" aria-hidden="true"></i>
+      <div id="platen-knob" aria-hidden="true"></div>
+      <button id="carriage-lever" type="button" aria-label="Carriage return">
+        <i class="lever-bracket"></i>
+        <i class="lever-quadrant"></i>
+        <i class="lever-spring"></i>
+        <i class="lever-boss"></i>
+        <span class="lever-arm"><i class="lever-shaft"></i><i class="lever-grip"></i></span>
+      </button>
     </div>
 
     <div id="sheet-viewport">
+      <div id="interior" aria-hidden="true">
+        <i class="mb-typebars"></i>
+        <i class="mb-segment"></i>
+        <i class="mb-ribbon"></i>
+      </div>
       <div id="sheet">
         <div id="paper-grain"></div>
         <div id="patch-layer"></div>
@@ -25,8 +69,35 @@
       </div>
     </div>
 
+    <!-- The carriage hardware that is bolted across the FRONT of the paper:
+         the upper tie rod, the line gauge and the margin stops riding on
+         it. Travels with the carriage exactly as #platen-assembly does, but
+         is a separate layer because the paper passes between the two. The
+         lower tie rod stays in the assembly, behind the paper. -->
+    <div id="platen-front" aria-hidden="true">
+      <i class="tie-rod tie-rod-top"></i>
+      <i class="scale"></i>
+      <i class="margin-stop margin-stop-l"></i>
+      <i class="margin-stop margin-stop-r"></i>
+    </div>
+
+    <div id="machine-front" aria-hidden="true">
+      <i class="mb-hood"></i>
+      <i class="mb-rod mb-rod-a"></i>
+      <i class="mb-rod mb-rod-b"></i>
+      <span class="mb-plate" id="version-plate">VERSION 0.01</span>
+      <i class="mb-foot mb-foot-l"></i>
+      <i class="mb-foot mb-foot-r"></i>
+    </div>
+
+    <!-- The desk, repainted over the page below the machine. Its own layer
+         because it is the one part of the machine that has to sit above
+         the paper; the casting itself is below it. -->
+    <div id="machine-apron" aria-hidden="true">
+      <i class="mb-apron"></i>
+    </div>
+
     <div id="type-guide"></div>
-    <button id="carriage-lever" type="button" aria-label="Carriage return"></button>
   </div>
 
   <div id="rail">
@@ -38,17 +109,17 @@
 
   <div id="settings-card" class="card" role="dialog" aria-modal="true" aria-labelledby="card-title" hidden>
     <div class="card-rule"></div>
+    <i class="card-stain" aria-hidden="true"></i>
     <h2 class="card-title" id="card-title">Settings</h2>
 
-    <div class="setting" data-setting="realism">
-      <label class="lever"><input type="checkbox" id="opt-realism"><span class="lever-art"></span><span class="lever-label">Realism Mode</span></label>
-      <p class="setting-note">Backspace moves the carriage without erasing. Use Shift+Backspace to white out.</p>
-      <p class="setting-note">The ribbon wears out as you type.</p>
-    </div>
-
-    <div class="setting" data-setting="ribbon" hidden>
-      <div id="ribbon-wear" class="spool" style="--wear:0" role="img" aria-label="Ribbon wear"></div>
-      <button type="button" id="opt-new-ribbon" class="card-key">New Ribbon</button>
+    <div class="setting" data-setting="export-format">
+      <label for="opt-export-format" class="setting-label">Save format</label>
+      <select id="opt-export-format">
+        <option value="md">Markdown (.md)</option>
+        <option value="txt">Plain text (.txt)</option>
+        <option value="html">Web page (.html)</option>
+        <option value="rtf">Rich Text Format (.rtf)</option>
+      </select>
     </div>
 
     <div class="setting" data-setting="typeface">
@@ -64,15 +135,31 @@
     <div class="setting" data-setting="sound">
       <label class="lever"><input type="checkbox" id="opt-sound" checked><span class="lever-art"></span><span class="lever-label">Sound</span></label>
       <input type="range" id="opt-volume" class="thumbwheel" min="0" max="100" value="55" aria-label="Volume">
+      <label for="opt-sound-profile" class="setting-label">Sound profile</label>
+      <select id="opt-sound-profile">
+        <option value="classic">Soft Mechanical</option>
+        <option value="chrome">Chrome Office</option>
+        <option value="foundry">Steel Foundry</option>
+        <option value="teleprinter">Electric Teleprinter</option>
+        <option value="portable">Precision Portable</option>
+      </select>
+    </div>
+
+    <div class="setting" data-setting="realism">
+      <label class="lever"><input type="checkbox" id="opt-realism"><span class="lever-art"></span><span class="lever-label">Realism Mode</span></label>
+      <p class="setting-note">Backspace moves the carriage without erasing. Words may split at the margin.</p>
     </div>
 
     <button type="button" id="card-close" class="card-close" aria-label="Close settings">x</button>
   </div>
 
-  <div id="erase-confirm" class="carbon" role="dialog" aria-modal="true" aria-labelledby="carbon-text" hidden>
-    <p class="carbon-text" id="carbon-text">Clear this page? This cannot be undone.</p>
+  <div id="erase-confirm" class="card" role="dialog" aria-modal="true" aria-labelledby="erase-confirm-title" aria-describedby="erase-confirm-text" hidden>
+    <div class="card-rule"></div>
+    <h2 class="erase-confirm-title" id="erase-confirm-title">Clear this page?</h2>
+    <p class="erase-confirm-text" id="erase-confirm-text">This cannot be undone.</p>
     <button type="button" id="erase-no"  class="card-key">No</button>
     <button type="button" id="erase-yes" class="card-key">Yes</button>
+    <button type="button" id="erase-close" class="card-close" aria-label="Close clear confirmation">x</button>
   </div>
 
 </div>

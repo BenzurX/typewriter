@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typewriter - machine body options</title>
+<link href="https://fonts.googleapis.com/css2?family=Cutive+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f3ece0;
+  --paper-lit: #f8f3ea;
+  --ink: #2b2622;
+  --steel: #9aa0a6;
+  --steel-hi: #e4e8ec;
+  --steel-lo: #4a4f55;
+  --rubber: #2b2b2e;
+  --brass: #b8934a;
+  --brass-hi: #e8cf92;
+  --brass-lo: #5e4820;
+  --desk: #16211c;
+  --desk-hi: #2b3d33;
+  --desk-lo: #090f0c;
+  --face: "Cutive Mono", "Courier New", monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--face);
+  color: #e2ddd2;
+  background-color: var(--desk);
+  background-image:
+    radial-gradient(110% 60% at 15% -6%, rgba(206,255,224,0.12), rgba(206,255,224,0) 54%),
+    repeating-linear-gradient(90deg,
+      rgba(0,0,0,0) 0 214px, rgba(0,0,0,0.62) 214px 218px,
+      rgba(150,200,168,0.07) 218px 220px, rgba(0,0,0,0) 220px 224px),
+    repeating-linear-gradient(89.3deg,
+      rgba(120,170,138,0.07) 0 2px, rgba(0,0,0,0.14) 2px 6px, rgba(0,0,0,0) 6px 14px),
+    linear-gradient(170deg, var(--desk-hi) 0%, var(--desk) 50%, var(--desk-lo) 100%);
+  background-attachment: fixed;
+}
+
+header { padding: 30px 24px 4px; max-width: 1180px; margin: 0 auto; }
+header h1 { margin: 0 0 6px; font-size: 20px; letter-spacing: 0.04em; }
+header p { margin: 0 0 8px; font-size: 13px; opacity: 0.62; line-height: 1.6; }
+
+.option { max-width: 1180px; margin: 0 auto; padding: 0 24px 40px; }
+.label { display: flex; align-items: baseline; gap: 12px; padding: 34px 2px 4px; font-size: 14px; letter-spacing: 0.06em; }
+.label .tag { font-size: 12px; padding: 2px 8px; border: 1px solid rgba(226,221,210,0.35); border-radius: 2px; }
+.label .note { font-size: 12px; opacity: 0.6; letter-spacing: 0; }
+.bullets { margin: 2px 2px 10px; padding-left: 18px; font-size: 12px; opacity: 0.62; line-height: 1.7; }
+.bullets b { font-weight: normal; color: var(--brass-hi); opacity: 0.9; }
+
+.controls {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 6px 24px 0;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+.controls label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 1px solid rgba(226, 221, 210, 0.3);
+  border-radius: 3px;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.chosen { border-color: rgba(232, 207, 146, 0.85) !important; color: var(--brass-hi); }
+
+/* ============================================================
+   RIG
+
+   Corrected arrangement. The typist sits at the bottom of the
+   screen. The sheet feeds up behind the platen, wraps over the
+   roller and hangs down toward the viewer, so the machine body
+   that carries the ribbon and the typebars is IN FRONT of the
+   platen: below the carriage on screen, with the paper draped
+   over it. Only the shoulders, spools and hood show either side
+   of the sheet, and the typebar tips reach up in front of the
+   paper at the strike point, just under the platen.
+
+   Stacking: body 1, sheet 3, basket 3 (painted after the sheet,
+   so the bar tips sit in front of the paper), carriage 4.
+   ============================================================ */
+
+.rig {
+  position: relative;
+  width: 780px; max-width: 100%;
+  height: 620px;
+  margin: 0 auto;
+}
+
+/* ---- carriage (the chosen B4 build), at the top -------------------- */
+
+.carriage {
+  position: absolute;
+  left: 50%; top: 60px;
+  width: 560px; height: 58px;
+  transform: translateX(-50%);
+  z-index: 4;
+  filter: drop-shadow(0 12px 20px rgba(0,0,0,0.5));
+}
+.c-rail {
+  position: absolute;
+  left: -86px; right: -86px; top: -30px;
+  height: 13px; z-index: 0;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #cfd4da 0%, #868b92 26%, #3a3d42 74%, #1a1c1f 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.32), 0 4px 8px rgba(0,0,0,0.5);
+}
+.c-rail::after {
+  content: "";
+  position: absolute;
+  left: 40px; right: 40px; bottom: 100%;
+  height: 7px;
+  background: repeating-linear-gradient(90deg,
+    #3a3d42 0 4px, #14161a 4px 5px, #23262b 5px 9px, #0e1013 9px 10px);
+}
+.c-frame {
+  position: absolute;
+  top: -40px;
+  width: 48px; height: 130px;
+  z-index: 5;
+  border-radius: 7px;
+  background:
+    radial-gradient(60% 34% at 30% 12%, rgba(255,238,200,0.22), rgba(255,238,200,0) 58%),
+    radial-gradient(ellipse 9px 6px at 30% 66%, rgba(96,148,116,0.5) 0 60%, rgba(0,0,0,0) 100%),
+    radial-gradient(ellipse 6px 5px at 72% 26%, rgba(88,138,110,0.45) 0 60%, rgba(0,0,0,0) 100%),
+    radial-gradient(circle at 52% 82%, rgba(0,0,0,0.5) 0 2.2px, rgba(0,0,0,0) 3.6px),
+    linear-gradient(158deg, #7d6b41 0%, #453e33 44%, #1c1a17 100%);
+  box-shadow: inset 0 1px 0 rgba(255,236,190,0.32), inset -4px -4px 10px rgba(0,0,0,0.62), 0 6px 12px rgba(0,0,0,0.5);
+}
+.c-frame.l { left: -62px; }
+.c-frame.r { right: -62px; }
+.c-frame::before {
+  content: "";
+  position: absolute;
+  top: 46px; left: 50%;
+  width: 30px; height: 30px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 36% 30%, rgba(255,244,214,0.55), rgba(255,244,214,0) 46%),
+    linear-gradient(150deg, var(--brass), #4a3c1e 72%);
+  box-shadow: inset 0 0 7px rgba(0,0,0,0.75);
+}
+.c-platen {
+  position: absolute;
+  inset: 0 0 12px 0;
+  z-index: 3;
+  border-radius: 24px / 22px;
+  background:
+    linear-gradient(180deg,
+      rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.06) 16%,
+      rgba(0,0,0,0.18) 46%, rgba(0,0,0,0.52) 82%, rgba(0,0,0,0.34) 100%),
+    linear-gradient(96deg, #4b4a4d 0%, #6a686c 12%, #3c3b3f 62%, #232326 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.28), inset 0 -6px 14px rgba(0,0,0,0.6);
+}
+.c-platen::after {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,0) 0 52%, rgba(10,9,11,0.32) 62%, rgba(0,0,0,0) 78%),
+    repeating-linear-gradient(95.5deg,
+      rgba(0,0,0,0) 0 47px, rgba(226,226,232,0.14) 48px, rgba(6,6,8,0.26) 49px, rgba(0,0,0,0) 51px);
+}
+.c-collar {
+  position: absolute;
+  top: -5px;
+  width: 34px; height: 68px;
+  z-index: 6;
+  border-radius: 50% / 46%;
+  background:
+    radial-gradient(60% 50% at 34% 26%, rgba(255,255,255,0.5), rgba(255,255,255,0) 62%),
+    linear-gradient(150deg, #7c7a80 0%, #46454a 55%, #232226 100%);
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.6);
+}
+.c-collar.l { left: -26px; }
+.c-collar.r { right: -26px; }
+.c-rod {
+  position: absolute;
+  left: -46px; right: -46px;
+  height: 6px; z-index: 8;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #d8c08a, #94773a 42%, #4c3a16 100%);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.55);
+}
+.c-rod.top { top: -12px; }
+.c-rod.bottom { bottom: -26px; }
+.c-scale {
+  position: absolute;
+  left: -40px; right: -40px; bottom: -1px;
+  height: 9px; z-index: 6;
+  border-radius: 2px;
+  background:
+    repeating-linear-gradient(90deg, rgba(40,26,4,0.85) 0 1px, rgba(0,0,0,0) 1px 11px),
+    linear-gradient(180deg, #d9c08a 0%, #9d8140 46%, #4e3c18 100%);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+.c-bail {
+  position: absolute;
+  left: 30px; right: 30px; bottom: -14px;
+  height: 8px; z-index: 7;
+  border-radius: 4px;
+  background: linear-gradient(180deg, var(--steel-hi) 0%, var(--steel) 34%, var(--steel-lo) 100%);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.45);
+}
+.c-bail i {
+  position: absolute; top: -36px;
+  width: 7px; height: 46px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #b9bec4, #6a6e74 45%, #2f3237);
+}
+.c-bail i.l { left: -38px;  transform: rotate(26deg);  transform-origin: 50% 100%; }
+.c-bail i.r { right: -38px; transform: rotate(-26deg); transform-origin: 50% 100%; }
+.c-bail span {
+  position: absolute; top: 50%;
+  width: 42px; height: 20px;
+  border-radius: 10px / 9px;
+  transform: translateY(-50%);
+  background: linear-gradient(180deg, #3a3a3d 0%, var(--rubber) 48%, #131315 100%);
+  box-shadow: inset 0 -3px 6px rgba(0,0,0,0.7);
+}
+.c-bail span.r1 { left: 22%; }
+.c-bail span.r2 { right: 22%; }
+
+/* ---- sheet, wrapping over the roller and hanging toward us ---------
+   Off by default so the whole machine base is visible. The toggle at the
+   top of the page puts it back to check what the paper actually hides. */
+
+.sheet { display: none; }
+body.with-paper .sheet { display: block; }
+
+.sheet {
+  position: absolute;
+  left: 50%; top: 104px;
+  width: 470px; height: 420px;
+  transform: translateX(-50%);
+  z-index: 3;
+  padding: 34px 30px 26px;
+  color: var(--ink);
+  font-size: 15px; line-height: 1.7;
+  background-color: var(--paper);
+  background-image:
+    /* the curl coming off the platen */
+    linear-gradient(180deg, rgba(0,0,0,0.22) 0 3px, rgba(0,0,0,0.08) 8px, rgba(0,0,0,0) 26px),
+    radial-gradient(90% 60% at 30% 4%, rgba(255,255,255,0.7), rgba(255,255,255,0) 62%),
+    linear-gradient(180deg, var(--paper-lit), var(--paper) 40%, #e7ded0 100%);
+  box-shadow: 0 22px 40px rgba(0,0,0,0.5);
+}
+.sheet span { opacity: 0.86; }
+
+/* ---- the typebar basket -------------------------------------------
+   Two separate layers, because the basket is not one flat plane:
+
+   .basket  sits BEHIND the machine body (z 1). It is the well the bars
+            live in, so the hood and shoulders crop it and only the slot
+            between the carriage and the hood shows any of it. It also
+            paints its own dark interior, otherwise desk shows between
+            the bars and the fan reads as a paper decoration.
+   .strike  sits IN FRONT of the paper (z 5): only the few slugs at the
+            strike point and the ribbon that crosses them, which is all
+            of the mechanism a real machine leaves visible over a sheet.  */
+
+.basket {
+  position: absolute;
+  left: 50%; top: 116px;
+  width: 470px; height: 240px;
+  transform: translateX(-50%);
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: 0 0 16px 16px;
+  background:
+    radial-gradient(130% 74% at 50% 0%, rgba(0,0,0,0.72), rgba(0,0,0,0) 76%),
+    linear-gradient(180deg, #0a0b0d 0%, #141619 52%, #1c1f23 100%);
+  box-shadow: inset 0 12px 26px rgba(0,0,0,0.85);
+}
+
+/* The fan converges upward on the strike point: the bar tips are at the
+   top, where they meet the paper on the platen, and the bars sweep down
+   and out into the well below. The mask keeps the middle clear, because
+   at that radius the bars are closer together than a pixel and merge
+   into a solid disc. */
+.typebars {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-conic-gradient(from 118deg at 50% 0%,
+      rgba(196,204,214,0.55) 0deg 0.8deg,
+      rgba(20,22,26,0) 0.8deg 3.1deg,
+      rgba(150,158,168,0.34) 3.1deg 3.7deg,
+      rgba(20,22,26,0) 3.7deg 6.2deg);
+  -webkit-mask: radial-gradient(80% 92% at 50% 0%,
+      rgba(0,0,0,0) 16%, #000 27%, rgba(0,0,0,0.55) 68%, rgba(0,0,0,0) 100%);
+          mask: radial-gradient(80% 92% at 50% 0%,
+      rgba(0,0,0,0) 16%, #000 27%, rgba(0,0,0,0.55) 68%, rgba(0,0,0,0) 100%);
+}
+
+/* the segment: the slotted arc the bars rise through, below the tips */
+.segment {
+  position: absolute;
+  left: 50%; top: 26px;
+  width: 250px; height: 44px;
+  transform: translateX(-50%);
+  z-index: 2;
+  border-radius: 0 0 50% 50% / 0 0 100% 100%;
+  background:
+    repeating-linear-gradient(90deg,
+      rgba(0,0,0,0.75) 0 2px, rgba(184,192,202,0.45) 2px 3px, rgba(0,0,0,0) 3px 6px),
+    linear-gradient(0deg, #6a7079 0%, #34383d 60%, #16181b 100%);
+  box-shadow: 0 3px 7px rgba(0,0,0,0.6);
+}
+
+/* ---- what shows in front of the paper ------------------------------ */
+
+.strike {
+  position: absolute;
+  left: 50%; top: 116px;
+  width: 470px; height: 60px;
+  transform: translateX(-50%);
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* the handful of slugs standing up at the printing point */
+.slugs {
+  position: absolute;
+  left: 50%; top: 0;
+  width: 150px; height: 40px;
+  transform: translateX(-50%);
+  background:
+    repeating-conic-gradient(from 152deg at 50% 0%,
+      rgba(232,238,248,0.78) 0deg 1.2deg, rgba(0,0,0,0) 1.2deg 6.2deg);
+  -webkit-mask: radial-gradient(100% 100% at 50% 0%,
+      rgba(0,0,0,0) 26%, #000 46%, rgba(0,0,0,0) 100%);
+          mask: radial-gradient(100% 100% at 50% 0%,
+      rgba(0,0,0,0) 26%, #000 46%, rgba(0,0,0,0) 100%);
+}
+
+/* the ribbon, running across in front of the paper at the strike point */
+.ribbon {
+  position: absolute;
+  left: -112px; right: -112px; top: 14px;
+  height: 13px;
+  border-top: 1px solid rgba(226,214,196,0.34);
+  background:
+    /* the weave, and a specular along the top edge: without it the ribbon
+       is black cloth on a black basket and disappears entirely */
+    repeating-linear-gradient(90deg,
+      rgba(255,255,255,0.05) 0 1px, rgba(0,0,0,0) 1px 3px),
+    linear-gradient(180deg, rgba(255,236,214,0.28) 0 12%, rgba(0,0,0,0) 46%),
+    linear-gradient(180deg, #63505a 0%, #33272c 50%, #150f12 100%);
+  box-shadow: 0 4px 9px rgba(0,0,0,0.7), inset 0 -1px 0 rgba(255,255,255,0.06);
+}
+/* the vibrator: the little fork that lifts the ribbon into the strike */
+.ribbon::after {
+  content: "";
+  position: absolute;
+  left: 50%; top: -7px;
+  width: 46px; height: 22px;
+  transform: translateX(-50%);
+  border-radius: 4px 4px 2px 2px;
+  border: 2px solid rgba(186,194,204,0.5);
+  border-bottom: 0;
+  background: rgba(0,0,0,0.18);
+}
+
+/* ---- machine body, in front of the platen -------------------------- */
+
+.body {
+  position: absolute;
+  left: 50%; top: 150px;
+  width: 700px; height: 380px;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+/* the main casting */
+.hood {
+  position: absolute;
+  left: 0; right: 0; top: 60px; bottom: 26px;
+  border-radius: 10px 10px 16px 16px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.10) 0 4%, rgba(0,0,0,0) 16%),
+    radial-gradient(120% 70% at 22% 0%, rgba(226,236,246,0.10), rgba(226,236,246,0) 58%),
+    linear-gradient(8deg, #35373b 0%, #232529 44%, #101114 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.16),
+    inset 0 16px 30px rgba(0,0,0,0.55),
+    0 20px 34px rgba(0,0,0,0.55);
+}
+
+/* the shoulders, standing either side of the paper and rising to the
+   platen: these and the spools are what actually shows */
+.shoulder {
+  position: absolute;
+  top: 0;
+  width: 138px; height: 300px;
+  border-radius: 12px 12px 10px 10px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.13) 0 5%, rgba(0,0,0,0) 18%),
+    linear-gradient(166deg, #3c3f44 0%, #24262a 46%, #0e0f12 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 10px 20px rgba(0,0,0,0.5);
+}
+.shoulder.l { left: 0; }
+.shoulder.r { right: 0; }
+
+/* ribbon spools, sitting on top of the shoulders beside the paper */
+.spool {
+  position: absolute;
+  top: 18px;
+  width: 84px; height: 84px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 36% 30%, rgba(255,255,255,0.22), rgba(255,255,255,0) 46%),
+    repeating-radial-gradient(circle at 50% 50%, #23201d 0 2px, #171412 2px 4px),
+    radial-gradient(circle at 50% 50%, #3a352f 0 44%, #1b1917 100%);
+  box-shadow: inset 0 0 12px rgba(0,0,0,0.8), 0 6px 12px rgba(0,0,0,0.55);
+}
+.spool.l { left: 27px; }
+.spool.r { right: 27px; }
+.spool::after {
+  content: "";
+  position: absolute;
+  inset: 28px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 36% 30%, rgba(255,246,220,0.7), rgba(255,246,220,0) 44%),
+    linear-gradient(150deg, var(--brass-hi), var(--brass) 44%, #43350f);
+  box-shadow: inset 0 0 5px rgba(0,0,0,0.6);
+}
+/* the ribbon leaving the spool, heading inward toward the strike point */
+.spool::before {
+  content: "";
+  position: absolute;
+  top: 46%; height: 8px;
+  width: 92px;
+  background: linear-gradient(180deg, #2a2226 0%, #120e11 60%, #241d21 100%);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.6);
+}
+.spool.l::before { left: 62px; transform: rotate(-13deg); transform-origin: 0 50%; }
+.spool.r::before { right: 62px; transform: rotate(13deg); transform-origin: 100% 50%; }
+
+/* domed spool covers */
+.spool-cover {
+  position: absolute;
+  top: 8px;
+  width: 108px; height: 68px;
+  border-radius: 50% 50% 8px 8px / 74% 74% 8px 8px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.16) 0 8%, rgba(0,0,0,0) 26%),
+    linear-gradient(168deg, #3a3d42 0%, #22252a 48%, #0d0e11 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 8px 16px rgba(0,0,0,0.55);
+}
+.spool-cover.l { left: 15px; }
+.spool-cover.r { right: 15px; }
+
+/* maker's plate, on the front face below the paper */
+.plate {
+  position: absolute;
+  left: 50%; bottom: 54px;
+  transform: translateX(-50%);
+  padding: 3px 12px 4px;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  color: rgba(246,232,196,0.72);
+  border-radius: 3px;
+  background: linear-gradient(180deg, #4a4126 0%, #2a2418 60%, #14110b 100%);
+  box-shadow: inset 0 1px 0 rgba(255,236,190,0.22), 0 3px 6px rgba(0,0,0,0.6);
+}
+
+/* pressed slots in the front face */
+.vents {
+  position: absolute;
+  left: 50%; bottom: 84px;
+  width: 220px; height: 16px;
+  transform: translateX(-50%);
+  border-radius: 3px;
+  background: repeating-linear-gradient(90deg,
+    rgba(0,0,0,0.8) 0 4px, rgba(255,255,255,0.06) 4px 5px, rgba(0,0,0,0) 5px 14px);
+}
+
+/* chrome trim along the front lower edge */
+.trim {
+  position: absolute;
+  left: 12px; right: 12px; bottom: 30px;
+  height: 7px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, var(--steel-hi) 0%, var(--steel) 34%, var(--steel-lo) 78%, #1e2024 100%);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.6);
+}
+
+/* front panel with panel screws, below the keyboard line */
+.front-panel {
+  position: absolute;
+  left: 30px; right: 30px; bottom: 8px;
+  height: 74px;
+  border-radius: 0 0 12px 12px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.08) 0 5%, rgba(0,0,0,0) 20%),
+    linear-gradient(4deg, #2f3237 0%, #1c1e22 60%, #0c0d10 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 12px 22px rgba(0,0,0,0.55);
+}
+.front-panel::before,
+.front-panel::after {
+  content: "";
+  position: absolute;
+  bottom: 14px;
+  width: 11px; height: 11px;
+  border-radius: 50%;
+  background:
+    linear-gradient(0deg, rgba(0,0,0,0.75) 46%, rgba(0,0,0,0) 47% 53%, rgba(0,0,0,0.75) 54%),
+    linear-gradient(150deg, #8d9198, #3c3f44);
+}
+.front-panel::before { left: 20px; }
+.front-panel::after  { right: 20px; }
+
+/* brass rods tying the shoulders together across the front */
+.side-rod {
+  position: absolute;
+  left: 40px; right: 40px;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #d8c08a, #94773a 42%, #4c3a16 100%);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,240,200,0.45);
+}
+.side-rod.a { bottom: 112px; }
+.side-rod.b { bottom: 92px; }
+
+/* feet */
+.foot {
+  position: absolute;
+  bottom: -8px;
+  width: 64px; height: 18px;
+  border-radius: 4px 4px 9px 9px;
+  background: linear-gradient(180deg, #2a2c30 0%, #131417 70%, #0a0b0d 100%);
+  box-shadow: 0 10px 16px rgba(0,0,0,0.6);
+}
+.foot.l { left: 46px; }
+.foot.r { right: 46px; }
+
+/* wear: chips, rust freckles, hand grime where the machine is grabbed */
+.body-wear {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 8px 4px at 7% 22%, rgba(198,204,212,0.5) 0 60%, rgba(0,0,0,0) 100%),
+    radial-gradient(ellipse 5px 7px at 94% 40%, rgba(186,192,200,0.42) 0 60%, rgba(0,0,0,0) 100%),
+    radial-gradient(ellipse 4px 3px at 16% 74%, rgba(150,92,48,0.5) 0 60%, rgba(0,0,0,0) 100%),
+    radial-gradient(ellipse 6px 3px at 86% 80%, rgba(146,90,46,0.4) 0 60%, rgba(0,0,0,0) 100%),
+    radial-gradient(50% 30% at 9% 30%, rgba(255,255,255,0.05), rgba(255,255,255,0) 70%),
+    radial-gradient(50% 30% at 91% 30%, rgba(255,255,255,0.045), rgba(255,255,255,0) 70%);
+}
+
+/* optional pieces */
+.spool-cover, .front-panel, .side-rod, .vents { display: none; }
+
+/* ============================================================
+   M1 - open typebar basket
+   ============================================================ */
+.m1 .hood { top: 130px; }
+.m1 .shoulder {
+  width: 116px; height: 260px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.12) 0 5%, rgba(0,0,0,0) 18%),
+    repeating-linear-gradient(64deg, rgba(255,255,255,0.045) 0 2px, rgba(0,0,0,0.10) 2px 4px),
+    linear-gradient(166deg, #34373c 0%, #202226 46%, #0c0d10 100%);
+}
+.m1 .side-rod { display: block; }
+.m1 .side-rod.a { bottom: 168px; }
+.m1 .side-rod.b { bottom: 146px; }
+.m1 .trim { display: none; }
+
+/* ============================================================
+   M2 - closed hood, spool covers
+   ============================================================ */
+.m2 .hood { top: 40px; }
+.m2 .shoulder { height: 316px; }
+.m2 .spool-cover { display: block; }
+.m2 .spool { top: 30px; }
+.m2 .spool::before { opacity: 0; }
+.m2 .vents { display: block; }
+
+/* ============================================================
+   M3 - skeleton portable
+   ============================================================ */
+.m3 .body { height: 320px; }
+.m3 .hood { top: 96px; bottom: 22px; border-radius: 8px; }
+.m3 .shoulder {
+  width: 112px; height: 236px;
+  background:
+    linear-gradient(180deg, rgba(255,238,200,0.16) 0 5%, rgba(0,0,0,0) 20%),
+    radial-gradient(circle at 50% 62%, rgba(0,0,0,0.9) 0 17px, rgba(255,236,190,0.22) 18px, rgba(0,0,0,0) 20px),
+    linear-gradient(158deg, #7d6b41 0%, #453e33 44%, #1c1a17 100%);
+}
+.m3 .spool { top: 12px; width: 70px; height: 70px; }
+.m3 .spool.l { left: 21px; }
+.m3 .spool.r { right: 21px; }
+.m3 .side-rod { display: block; }
+.m3 .side-rod.a { bottom: 96px; }
+.m3 .side-rod.b { bottom: 74px; }
+.m3 .trim { display: none; }
+.m3 .plate { bottom: 34px; }
+
+/* ============================================================
+   M4 - office standard
+   ============================================================ */
+.m4 .body { height: 430px; }
+.m4 .hood { top: 52px; bottom: 40px; }
+.m4 .shoulder { width: 152px; height: 348px; }
+.m4 .spool-cover { display: block; }
+.m4 .spool-cover.l, .m4 .spool-cover.r { width: 124px; height: 78px; }
+.m4 .spool-cover.l { left: 14px; }
+.m4 .spool-cover.r { right: 14px; }
+.m4 .spool { top: 26px; }
+.m4 .spool::before { opacity: 0; }
+.m4 .front-panel { display: block; }
+.m4 .plate { bottom: 104px; }
+.m4 .trim { bottom: 88px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Machine body options</h1>
+  <p>Corrected arrangement. The typist sits at the bottom of the screen: the sheet feeds up behind the platen, wraps over the roller and hangs down toward the viewer, so the body carrying the ribbon and typebars is <em>in front of</em> the platen, below the carriage on screen, with the paper draped over it.</p>
+  <p>What that means visually: the shoulders and ribbon spools stand either side of the paper, the hood and front face show below it, and the typebar tips plus the ribbon reach up in front of the sheet at the strike point, just under the platen. The rest of the basket is hidden behind the paper, exactly as on a real machine.</p>
+  <p>The sheet is off by default so the whole base is visible. Toggle it back on to see how much the paper covers.</p>
+</header>
+
+<div class="controls">
+  <label><input type="checkbox" id="paper-toggle"> Show paper</label>
+</div>
+
+<section class="option">
+  <div class="label"><span class="tag">M1</span> Open typebar basket <span class="note">most mechanism on show; brass rods across the front</span></div>
+  <ul class="bullets">
+    <li><b>Body:</b> low hood, crinkle-painted shoulders, two brass cross rods, spools open beside the paper.</li>
+    <li><b>Reads as:</b> a stripped machine on a workbench.</li>
+  </ul>
+  <div class="rig m1" data-rig></div>
+</section>
+
+<section class="option">
+  <div class="label"><span class="tag">M2</span> Closed hood, spool covers <span class="note">calmest; the mechanism is fully enclosed</span></div>
+  <ul class="bullets">
+    <li><b>Body:</b> tall enamel hood, pressed vent slots, domed covers over both spools.</li>
+    <li><b>Reads as:</b> a finished consumer machine.</li>
+  </ul>
+  <div class="rig m2" data-rig></div>
+</section>
+
+<section class="option">
+  <div class="label"><span class="tag chosen">M3 - chosen</span> Skeleton portable <span class="note">best material match to the brass carriage</span></div>
+  <ul class="bullets">
+    <li><b>Body:</b> short, light, brass shoulders pierced with a lightening hole each, brass cross rods, small open spools.</li>
+    <li><b>Reads as:</b> the machine the carriage came off.</li>
+  </ul>
+  <div class="rig m3" data-rig></div>
+</section>
+
+<section class="option">
+  <div class="label"><span class="tag">M4</span> Office standard <span class="note">your pick, now the right way round</span></div>
+  <ul class="bullets">
+    <li><b>Body:</b> deep hood, wide shoulders rising past the platen, big domed spool covers, chrome trim, and a screwed front panel below the paper.</li>
+    <li><b>Reads as:</b> a heavy desk machine; fills the space around the sheet rather than behind it.</li>
+  </ul>
+  <div class="rig m4" data-rig></div>
+</section>
+
+<script>
+// One markup template for all four, so the builds cannot drift apart.
+// Order matters: the sheet is painted before the basket, so the typebar
+// tips and the ribbon sit in front of the paper at the strike point.
+const RIG = `
+  <div class="body">
+    <i class="hood"></i>
+    <i class="vents"></i>
+    <i class="trim"></i>
+    <i class="side-rod a"></i>
+    <i class="side-rod b"></i>
+    <i class="front-panel"></i>
+    <span class="plate">VERSION 0.01</span>
+    <i class="shoulder l"></i>
+    <i class="shoulder r"></i>
+    <i class="spool l"></i>
+    <i class="spool r"></i>
+    <i class="spool-cover l"></i>
+    <i class="spool-cover r"></i>
+    <i class="foot l"></i>
+    <i class="foot r"></i>
+    <i class="body-wear"></i>
+  </div>
+
+  <div class="carriage">
+    <i class="c-rail"></i>
+    <i class="c-frame l"></i>
+    <i class="c-frame r"></i>
+    <i class="c-rod top"></i>
+    <div class="c-platen"></div>
+    <i class="c-collar l"></i>
+    <i class="c-collar r"></i>
+    <i class="c-scale"></i>
+    <div class="c-bail"><i class="l"></i><i class="r"></i><span class="r1"></span><span class="r2"></span></div>
+    <i class="c-rod bottom"></i>
+  </div>
+
+  <div class="sheet"><span>the quick brown fox jumps over<br>the lazy dog. 1234567890</span></div>
+
+  <div class="basket">
+    <i class="typebars"></i>
+    <i class="segment"></i>
+  </div>
+
+  <div class="strike">
+    <i class="slugs"></i>
+    <i class="ribbon"></i>
+  </div>
+`;
+document.querySelectorAll('[data-rig]').forEach(el => { el.innerHTML = RIG; });
+
+document.getElementById('paper-toggle').addEventListener('change', e => {
+  document.body.classList.toggle('with-paper', e.target.checked);
+});
+</script>
+
+</body>
+</html>

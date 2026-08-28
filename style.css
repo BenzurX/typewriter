@@ -10,10 +10,11 @@
      7. Type guide
      8. Button rail (arms, rings, caps)
      9. Settings card
-    10. Card controls (lever, select, thumbwheel, spool)
-    11. Erase confirmation (carbon slip)
+    10. Card controls (lever, select, thumbwheel)
+    11. Erase confirmation (ruled notecard)
     12. Reduced motion
     13. Responsive
+    14. Print
    ============================================================ */
 
 
@@ -96,20 +97,31 @@
   --card-rule-gap: 32px;
 
   /* desk and machine */
-  --desk: #241d18;
-  --desk-hi: #3a2f26;
+  /* green-black stained oak: the desk is dark, with the stain sitting in
+     the open pores so the grain reads greener rather than lighter */
+  --desk: #16211c;
+  --desk-hi: #2b3d33;
+  --desk-lo: #090f0c;
   --steel: #9aa0a6;
   --steel-hi: #e4e8ec;
   --steel-lo: #4a4f55;
+  /* tarnished brass for the carriage hardware: rods, gauge, fittings */
+  --brass: #b8934a;
+  --brass-hi: #e8cf92;
+  --brass-lo: #5e4820;
   --bakelite: #e8dcc2;
   --rubber: #2b2b2e;
 
   /* typeface, swapped by body[data-typeface] */
   --face: "TT2020", "Courier Prime", "Courier New", monospace;
 
-  /* carriage transform, written by app.js on #sheet */
+  /* carriage transform, written by app.js on #sheet and #machine */
   --sheet-x: 0px;
   --sheet-y: 0px;
+  --platen-x: 0px;
+  /* carriage width, shared by both carriage layers */
+  --platen-w: calc(var(--cols) * var(--cell-w) + var(--margin-x) * 2 + 96px);
+  --platen-roll: 0px;
 
   /* Strike point, screen-fixed. app.js may retune these. It sits just
      under the platen and bail, the way it does on a real machine, and
@@ -118,6 +130,16 @@
   /* Just below the platen and bail, but far enough down that a couple of
      finished lines stay readable before they roll up behind the roller. */
   --guide-y: 21%;
+
+  /* How far the typebar basket hangs below the top of the opening. A real
+     basket pivots well under the platen and the bars swing UP to it, so
+     the fan converges here rather than at the strike line. The fan, the
+     segment and the ribbon all read this, so the ribbon stays on the bar
+     tips whatever it is set to. */
+  --bar-drop: 96px;
+  /* The well has to be deeper than the drop or the fan runs straight into
+     the bottom fade with no floor showing under it. */
+  --well-h: 400px;
 
   /* rail key geometry */
   --key-d: 86px;
@@ -147,13 +169,32 @@ html, body {
   overflow-x: hidden;
 }
 
+/* Planked desk in green-black stained oak, lit by a single key light from
+   upper left. Layers, top to bottom: key light, floor falloff, board seams,
+   open-pore grain, wide figure streaks, base stain gradient.
+
+   Held in a variable because the machine's apron repaints the same desk
+   over the paper hanging below the machine, and the two have to be the
+   same surface pixel for pixel. Both are background-attachment: fixed,
+   so both are anchored to the viewport rather than to their own box. */
+:root {
+  --desk-art:
+    radial-gradient(110% 85% at 15% -12%, rgba(206, 255, 224, 0.12), rgba(206, 255, 224, 0) 54%),
+    radial-gradient(150% 120% at 50% 125%, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0) 60%),
+    repeating-linear-gradient(90deg,
+      rgba(0, 0, 0, 0) 0 214px, rgba(0, 0, 0, 0.62) 214px 218px,
+      rgba(150, 200, 168, 0.07) 218px 220px, rgba(0, 0, 0, 0) 220px 224px),
+    repeating-linear-gradient(89.3deg,
+      rgba(120, 170, 138, 0.07) 0 2px, rgba(0, 0, 0, 0.14) 2px 6px, rgba(0, 0, 0, 0) 6px 14px),
+    repeating-linear-gradient(90.7deg,
+      rgba(0, 0, 0, 0.16) 0 8px, rgba(0, 0, 0, 0) 8px 33px),
+    linear-gradient(170deg, var(--desk-hi) 0%, var(--desk) 50%, var(--desk-lo) 100%);
+}
+
 body {
   background-color: var(--desk);
-  /* desk: warm wood-ish falloff with a single key light from upper left */
-  background-image:
-    radial-gradient(120% 90% at 16% -10%, rgba(255, 240, 214, 0.16), rgba(255, 240, 214, 0) 58%),
-    radial-gradient(140% 120% at 50% 120%, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0) 60%),
-    linear-gradient(168deg, var(--desk-hi) 0%, var(--desk) 46%, #17120f 100%);
+  background-image: var(--desk-art);
+  background-attachment: fixed;
   color: var(--ink);
   font-family: var(--face);
   -webkit-font-smoothing: antialiased;
@@ -162,6 +203,23 @@ body {
 ::selection {
   background: rgba(58, 64, 85, 0.22);
   color: var(--ink);
+}
+
+/* The live region app.js announces into. Off-canvas rather than
+   display:none or visibility:hidden, both of which take it out of the
+   accessibility tree and silence it. Clipped to a 1px box so it cannot
+   add height below the desk, which is already a full viewport tall. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
 }
 
 #desk {
@@ -175,12 +233,33 @@ body {
   justify-content: center;
 }
 
+/* Every layer of the machine is ordered against every other one, so #machine
+   is the single stacking context they all live in: the sheet opening, the
+   casting, the two carriage layers and the sheet itself are all siblings
+   here, and none of them may make a context of its own that would trap a
+   child at the wrong depth. isolate also keeps the negative-z interior
+   inside the machine rather than dropping it behind the desk. Order:
+
+     -1  #interior            the well, seen through the opening
+      0  the opening's curl shadow and vignette
+      1  #machine-body / #machine-front   the casting
+      2  #platen-assembly     carriage parts behind the paper
+      3  #sheet               the paper
+      4  #machine-apron       the desk, repainted over the page
+      5  #platen-front        carriage parts bolted across the paper
+     10  #type-guide
+   and #rail, a sibling of #machine, sits above all of it at 20. */
 #machine {
   position: relative;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0 24px;
+  /* The side padding is what the machine's shoulders stand in: the sheet
+     opening is only 32px narrower than the platen, so without it there is
+     no strip of machine either side of the paper. Falls back to 24px on
+     narrow screens, where the desk cannot spare the width. */
+  padding: 0 clamp(24px, 5.5vw, 96px);
   max-width: 100%;
 }
 
@@ -189,20 +268,258 @@ body {
    4. MACHINE CHROME
    ------------------------------------------------------------ */
 
-#platen-assembly {
-  position: relative;
-  width: min(calc(100vw - 220px), calc(var(--cols) * var(--cell-w) + var(--margin-x) * 2 + 96px));
+/* The carriage is drawn in two layers, because the paper wraps over the
+   platen and passes BETWEEN them. Everything the paper covers - the rail,
+   the side castings, the roller, the collars, the bail, the knob and the
+   return lever and the lower tie rod - is in #platen-assembly, below the
+   sheet. The hardware bolted across the front of the paper - the upper
+   tie rod, the line gauge and the margin stops riding on it - is in
+   #platen-front, above the sheet.
+
+   They cannot be one element: a transform makes its own stacking context,
+   so nothing inside a moving carriage can be split around the sheet. Both
+   therefore carry the same width and the same --platen-x, which app.js
+   writes on #machine so both layers read it. */
+#platen-assembly,
+#platen-front {
+  width: var(--platen-w);
   height: 58px;
-  z-index: 4;
+  transform: translate3d(var(--platen-x), 0, 0);
+  will-change: transform;
+  transition: transform 34ms cubic-bezier(0.16, 0.9, 0.28, 1.06);
   filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.5));
 }
+
+#platen-assembly {
+  position: relative;
+  flex: 0 0 auto;
+  z-index: 2;
+}
+
+/* Same box as the assembly, laid over it: absolute so it takes no space of
+   its own, and topmost of the machine's layers, which is where these parts
+   sit on the real machine - bolted across the front of the paper. */
+#platen-front {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 5;
+  pointer-events: none;
+  margin-left: calc(var(--platen-w) / -2);
+}
+
+/* The shaft between the right-hand casting and the feed knob, so the two
+   read as one part rather than two objects near each other. */
+#platen-assembly::after {
+  content: "";
+  position: absolute;
+  right: -100px;
+  top: 22px;
+  width: 70px;
+  height: 10px;
+  z-index: 7;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #d8c08a, var(--brass) 40%, #4a3a19);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* ---- Carriage frame ------------------------------------------------
+   Everything on the carriage lands on one of the two end castings. The
+   machine is seen from the front and slightly above, so parts behind the
+   platen (rail, rack, upper tie rod) sit higher on screen, and parts in
+   front of it (gauge, margin stops, bail) sit lower, over the sheet.
+   Vertical layout, in assembly coordinates (the assembly is 58px tall):
+
+     -37..-30  escapement rack teeth
+     -30..-17  carriage rail
+     -12..-6   upper tie rod
+       0..46   platen roller
+      50..59   line gauge, bolted across both castings
+      64..72   paper bail, hung from arms that reach the castings
+      78..84   lower tie rod
+     -40..90   the castings themselves
+   -------------------------------------------------------------------- */
+
+.carriage-rail {
+  position: absolute;
+  left: -86px;
+  right: -86px;
+  top: -30px;
+  height: 13px;
+  z-index: 0;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #cfd4da 0%, #868b92 26%, #3a3d42 74%, #1a1c1f 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.32), 0 4px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* the rack the escapement walks along, behind the rail */
+.carriage-rail::after {
+  content: "";
+  position: absolute;
+  left: 40px;
+  right: 40px;
+  bottom: 100%;
+  height: 7px;
+  background: repeating-linear-gradient(90deg,
+    #3a3d42 0 4px, #14161a 4px 5px, #23262b 5px 9px, #0e1013 9px 10px);
+  box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.7);
+}
+
+/* End castings: tarnished brass with verdigris crawling out of the pits */
+.frame {
+  position: absolute;
+  top: -40px;
+  width: 48px;
+  height: 130px;
+  z-index: 5;
+  border-radius: 7px;
+  background:
+    radial-gradient(60% 34% at 30% 12%, rgba(255, 238, 200, 0.22), rgba(255, 238, 200, 0) 58%),
+    radial-gradient(ellipse 9px 6px at 30% 66%, rgba(96, 148, 116, 0.5) 0 60%, rgba(0, 0, 0, 0) 100%),
+    radial-gradient(ellipse 6px 5px at 72% 26%, rgba(88, 138, 110, 0.45) 0 60%, rgba(0, 0, 0, 0) 100%),
+    radial-gradient(ellipse 5px 9px at 18% 40%, rgba(80, 126, 100, 0.35) 0 60%, rgba(0, 0, 0, 0) 100%),
+    radial-gradient(circle at 52% 82%, rgba(0, 0, 0, 0.5) 0 2.2px, rgba(0, 0, 0, 0) 3.6px),
+    radial-gradient(circle at 24% 30%, rgba(0, 0, 0, 0.5) 0 1.8px, rgba(0, 0, 0, 0) 3px),
+    radial-gradient(circle at 74% 62%, rgba(0, 0, 0, 0.45) 0 1.4px, rgba(0, 0, 0, 0) 2.6px),
+    linear-gradient(158deg, #7d6b41 0%, #453e33 44%, #1c1a17 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 236, 190, 0.32),
+    inset -4px -4px 10px rgba(0, 0, 0, 0.62),
+    0 6px 12px rgba(0, 0, 0, 0.5);
+}
+.frame-l { left: -62px; }
+.frame-r { right: -62px; }
+
+/* the bearing boss the platen shaft turns in, on the platen axis */
+.frame::before {
+  content: "";
+  position: absolute;
+  top: 46px;
+  left: 50%;
+  width: 30px;
+  height: 30px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 36% 30%, rgba(255, 244, 214, 0.55), rgba(255, 244, 214, 0) 46%),
+    linear-gradient(150deg, var(--brass), #4a3c1e 72%);
+  box-shadow: inset 0 0 7px rgba(0, 0, 0, 0.75), 0 1px 0 rgba(255, 236, 190, 0.2);
+}
+
+.screw {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background:
+    linear-gradient(0deg, rgba(0, 0, 0, 0.75) 46%, rgba(0, 0, 0, 0) 47% 53%, rgba(0, 0, 0, 0.75) 54%),
+    radial-gradient(circle at 34% 30%, rgba(255, 244, 214, 0.6), rgba(255, 244, 214, 0) 52%),
+    linear-gradient(150deg, #c2a463, #4c3d1f);
+  box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.6), 0 1px 1px rgba(0, 0, 0, 0.5);
+}
+.screw-a { top: 8px; left: 8px; }
+.screw-b { top: 8px; right: 8px; }
+.screw-c { bottom: 9px; left: 50%; transform: translateX(-50%) rotate(38deg); }
+
+/* Tie rods, threaded into both castings and nutted at each end */
+.tie-rod {
+  position: absolute;
+  left: -46px;
+  right: -46px;
+  height: 6px;
+  z-index: 8;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #d8c08a, #94773a 42%, #4c3a16 100%);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 240, 200, 0.5);
+}
+.tie-rod::before,
+.tie-rod::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 13px;
+  height: 13px;
+  transform: translateY(-50%);
+  border-radius: 3px;
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255, 246, 220, 0.7), rgba(255, 246, 220, 0) 46%),
+    linear-gradient(150deg, #cfae67, #4a3a17);
+  box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.6), 0 2px 3px rgba(0, 0, 0, 0.55);
+}
+.tie-rod::before { left: -5px; }
+.tie-rod::after  { right: -5px; }
+.tie-rod-top    { top: -12px; }
+.tie-rod-bottom { bottom: -26px; }
+
+/* Line gauge, bolted across the front of both castings */
+.scale {
+  position: absolute;
+  left: -40px;
+  right: -40px;
+  bottom: -1px;
+  height: 9px;
+  z-index: 6;
+  border-radius: 2px;
+  background:
+    repeating-linear-gradient(90deg, rgba(40, 26, 4, 0.85) 0 1px, rgba(0, 0, 0, 0) 1px 11px),
+    linear-gradient(180deg, #d9c08a 0%, #9d8140 46%, #4e3c18 100%);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 240, 200, 0.45);
+}
+.scale::before,
+.scale::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background:
+    linear-gradient(0deg, rgba(0, 0, 0, 0.7) 46%, rgba(0, 0, 0, 0) 47% 53%, rgba(0, 0, 0, 0.7) 54%),
+    radial-gradient(circle at 34% 30%, rgba(255, 246, 220, 0.65), rgba(255, 246, 220, 0) 52%),
+    linear-gradient(150deg, #c2a463, #4c3d1f);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+.scale::before { left: 2px; }
+.scale::after  { right: 2px; }
+
+/* Margin stops, riding on the gauge */
+.margin-stop {
+  position: absolute;
+  bottom: -6px;
+  width: 12px;
+  height: 18px;
+  z-index: 8;
+  border-radius: 2px 2px 4px 4px;
+  background: linear-gradient(180deg, #e6cd90, var(--brass) 44%, #4c3a18);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.55);
+}
+.margin-stop-l { left: 76px; }
+.margin-stop-r { right: 76px; }
 
 /* The platen roller: hard rubber cylinder, key light from upper left */
 #platen {
   position: absolute;
   inset: 0 0 12px 0;
+  z-index: 3;
   border-radius: 24px / 22px;
   background:
+    /* Variant A: restrained service scratches from paper dust and cleaning. */
+    repeating-linear-gradient(96deg,
+      rgba(0, 0, 0, 0) 0 63px,
+      rgba(220, 220, 224, 0.12) 64px,
+      rgba(7, 7, 9, 0.20) 65px,
+      rgba(0, 0, 0, 0) 67px),
+    linear-gradient(172deg,
+      rgba(0, 0, 0, 0) 0 18%,
+      rgba(218, 218, 222, 0.10) 19%,
+      rgba(0, 0, 0, 0) 20% 57%,
+      rgba(4, 4, 6, 0.24) 58%,
+      rgba(0, 0, 0, 0) 60%),
+    repeating-linear-gradient(178deg,
+      rgba(0, 0, 0, 0) 0 7px,
+      rgba(235, 235, 238, 0.055) 8px,
+      rgba(0, 0, 0, 0) 9px 15px),
     linear-gradient(180deg,
       rgba(255, 255, 255, 0.30) 0%,
       rgba(255, 255, 255, 0.06) 16%,
@@ -216,29 +533,85 @@ body {
     0 2px 0 rgba(0, 0, 0, 0.5);
 }
 
-/* Platen end knobs */
-#platen::before,
+/* Roller wear: the bruised type-strike band, cleaning scratches, dents */
 #platen::after {
   content: "";
   position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg,
+      rgba(0, 0, 0, 0) 0 52%, rgba(10, 9, 11, 0.30) 58%, rgba(10, 9, 11, 0.34) 70%, rgba(0, 0, 0, 0) 78%),
+    repeating-linear-gradient(95.5deg,
+      rgba(0, 0, 0, 0) 0 47px, rgba(226, 226, 232, 0.16) 48px, rgba(6, 6, 8, 0.28) 49px, rgba(0, 0, 0, 0) 51px),
+    repeating-linear-gradient(84.5deg,
+      rgba(0, 0, 0, 0) 0 113px, rgba(220, 220, 228, 0.10) 114px, rgba(0, 0, 0, 0) 116px),
+    radial-gradient(circle at 18% 62%, rgba(0, 0, 0, 0.5) 0 1.6px, rgba(255, 255, 255, 0.10) 2px, rgba(0, 0, 0, 0) 3px),
+    radial-gradient(circle at 41% 38%, rgba(0, 0, 0, 0.42) 0 1.2px, rgba(0, 0, 0, 0) 2.4px),
+    radial-gradient(circle at 63% 71%, rgba(0, 0, 0, 0.46) 0 2px, rgba(255, 255, 255, 0.08) 2.4px, rgba(0, 0, 0, 0) 3.6px),
+    radial-gradient(circle at 77% 30%, rgba(0, 0, 0, 0.38) 0 1.4px, rgba(0, 0, 0, 0) 2.6px),
+    radial-gradient(circle at 88% 58%, rgba(0, 0, 0, 0.44) 0 1.8px, rgba(0, 0, 0, 0) 3px);
+}
+
+/* Platen end collars, bridging the roller ends to the castings */
+.collar {
+  position: absolute;
   top: -5px;
   width: 34px;
-  height: calc(100% + 10px);
+  height: 68px;
+  z-index: 6;
   border-radius: 50% / 46%;
   background:
     radial-gradient(60% 50% at 34% 26%, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 62%),
     linear-gradient(150deg, #7c7a80 0%, #46454a 55%, #232226 100%);
   box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.6);
 }
-#platen::before { left: -16px; }
-#platen::after  { right: -16px; }
+.collar-l { left: -26px; }
+.collar-r { right: -26px; }
+
+/* Right-hand feed knob: a fluted bakelite cylinder seen mostly from its
+   side. Only a narrow ellipse of the outer end is visible from above. */
+#platen-knob {
+  position: absolute;
+  /* outboard of the right-hand casting, joined to it by the knob shaft */
+  right: -104px;
+  top: -2px;
+  width: 34px;
+  height: 54px;
+  z-index: 8;
+  border-radius: 8px 48% 48% 8px / 9px 50% 50% 9px;
+  transition: background-position 150ms cubic-bezier(0.22, 0.72, 0.28, 1);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 24%, rgba(0, 0, 0, 0.42) 82%),
+    repeating-linear-gradient(180deg, #3b383c 0 4px, #171619 4px 8px);
+  background-position: 0 0, 0 var(--platen-roll);
+  box-shadow:
+    inset 4px 2px 7px rgba(255, 255, 255, 0.10),
+    inset -10px -4px 12px rgba(0, 0, 0, 0.72),
+    0 4px 9px rgba(0, 0, 0, 0.52);
+}
+
+#platen-knob::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 1px;
+  width: 11px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #484449 0%, #232125 38%, #101013 78%, #28262a 100%);
+  box-shadow:
+    inset 3px 1px 4px rgba(255, 255, 255, 0.10),
+    inset -3px -2px 5px rgba(0, 0, 0, 0.7);
+}
 
 /* Paper bail bar with two rubber rollers, crossing in front of the sheet */
 #bail {
   position: absolute;
-  left: 34px;
-  right: 34px;
-  bottom: -6px;
+  left: 30px;
+  right: 30px;
+  bottom: -14px;
   height: 8px;
   border-radius: 4px;
   background: linear-gradient(180deg, var(--steel-hi) 0%, var(--steel) 34%, var(--steel-lo) 100%);
@@ -262,48 +635,434 @@ body {
     inset 0 -3px 6px rgba(0, 0, 0, 0.7),
     0 3px 7px rgba(0, 0, 0, 0.5);
 }
-.bail-roller:nth-child(1) { left: 22%; }
-.bail-roller:nth-child(2) { right: 22%; }
+.bail-roller-l { left: 22%; }
+.bail-roller-r { right: 22%; }
 
-
-/* Carriage return lever, left of the platen */
-#carriage-lever {
+/* The bail hangs from arms whose pivot buttons land on the castings, so
+   the bar is suspended from the frame rather than floating over the sheet. */
+.bail-arm {
   position: absolute;
-  top: 6px;
-  left: -6px;
-  width: 96px;
-  height: 12px;
-  padding: 0;
-  border: 0;
-  cursor: pointer;
-  border-radius: 6px;
-  transform-origin: 100% 50%;
-  transform: rotate(-9deg);
-  background: linear-gradient(180deg, var(--steel-hi) 0%, var(--steel) 40%, var(--steel-lo) 100%);
-  box-shadow: 0 4px 9px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  transition: transform 120ms cubic-bezier(0.22, 0.9, 0.3, 1.2);
-  z-index: 7;
+  top: -36px;
+  width: 7px;
+  height: 46px;
+  background: linear-gradient(90deg, #b9bec4, #6a6e74 45%, #2f3237);
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
 }
+.bail-arm-l { left: -38px;  transform: rotate(26deg);  transform-origin: 50% 100%; }
+.bail-arm-r { right: -38px; transform: rotate(-26deg); transform-origin: 50% 100%; }
 
-#carriage-lever::before {
-  /* the lever paddle */
+.bail-arm::before {
   content: "";
   position: absolute;
-  left: -10px;
-  top: -7px;
-  width: 26px;
-  height: 26px;
-  border-radius: 5px;
-  background: radial-gradient(70% 60% at 34% 28%, #4a4441, #17130f 78%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 3px 6px rgba(0, 0, 0, 0.5);
+  top: -6px;
+  left: 50%;
+  width: 13px;
+  height: 13px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 30%, rgba(255, 244, 214, 0.7), rgba(255, 244, 214, 0) 44%),
+    linear-gradient(150deg, var(--brass), #34373c);
+  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
-#carriage-lever:hover { transform: rotate(-12deg); }
-#carriage-lever:active,
-#carriage-lever.is-thrown { transform: rotate(14deg); }
+
+/* ---- Carriage return lever ------------------------------------------
+   A real linkage rather than a bar: a bracket bolted to the left casting,
+   a notched quadrant the arm sweeps against, a pivot boss with the return
+   spring wound around it, and a brass rod carrying a worn thumb paddle.
+   The button itself is only the hit area; .lever-arm is what swings.
+   -------------------------------------------------------------------- */
+
+#carriage-lever {
+  position: absolute;
+  left: -176px;
+  top: -34px;
+  width: 170px;
+  height: 150px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  z-index: 9;
+}
+
+/* the bracket, bolted flat onto the casting */
+.lever-bracket {
+  position: absolute;
+  right: 14px;
+  top: 58px;
+  width: 46px;
+  height: 34px;
+  border-radius: 5px 3px 3px 6px;
+  background:
+    linear-gradient(180deg, rgba(255, 240, 200, 0.3) 0 12%, rgba(0, 0, 0, 0) 30%),
+    linear-gradient(158deg, #8a7647 0%, #4d453a 46%, #201d1a 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 236, 190, 0.3), 0 4px 9px rgba(0, 0, 0, 0.55);
+}
+.lever-bracket::after {
+  content: "";
+  position: absolute;
+  right: 7px;
+  bottom: 6px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background:
+    linear-gradient(0deg, rgba(0, 0, 0, 0.7) 46%, rgba(0, 0, 0, 0) 47% 53%, rgba(0, 0, 0, 0.7) 54%),
+    linear-gradient(150deg, #c2a463, #4c3d1f);
+}
+
+/* the quadrant the arm sweeps across, with its stop notches */
+.lever-quadrant {
+  position: absolute;
+  right: 20px;
+  top: 44px;
+  width: 46px;
+  height: 46px;
+  border-radius: 100% 0 0 0;
+  background:
+    radial-gradient(circle at 6% 46%, rgba(0, 0, 0, 0.55) 0 3px, rgba(0, 0, 0, 0) 3.6px),
+    radial-gradient(circle at 26% 16%, rgba(0, 0, 0, 0.55) 0 3px, rgba(0, 0, 0, 0) 3.6px),
+    radial-gradient(circle at 58% 2%, rgba(0, 0, 0, 0.5) 0 2.6px, rgba(0, 0, 0, 0) 3.2px),
+    radial-gradient(120% 120% at 100% 100%,
+      rgba(255, 240, 200, 0.18) 0 46%, rgba(0, 0, 0, 0.32) 62%, rgba(0, 0, 0, 0.5) 100%),
+    linear-gradient(150deg, #6d603c 0%, #3c372e 52%, #1b1916 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 236, 190, 0.2), 0 3px 6px rgba(0, 0, 0, 0.5);
+}
+
+/* the coil return spring, wound around the pivot */
+.lever-spring {
+  position: absolute;
+  right: 10px;
+  top: 74px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg at 50% 50%,
+    rgba(232, 207, 146, 0.75) 0deg 5deg, rgba(0, 0, 0, 0) 5deg 16deg);
+  -webkit-mask: radial-gradient(circle, rgba(0, 0, 0, 0) 0 9px, #000 10px 16px, rgba(0, 0, 0, 0) 17px);
+          mask: radial-gradient(circle, rgba(0, 0, 0, 0) 0 9px, #000 10px 16px, rgba(0, 0, 0, 0) 17px);
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6));
+}
+
+/* the pivot itself */
+.lever-boss {
+  position: absolute;
+  right: 14px;
+  top: 78px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255, 246, 220, 0.8), rgba(255, 246, 220, 0) 34%),
+    linear-gradient(150deg, var(--brass-hi), var(--brass) 44%, #43350f);
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5), 0 3px 6px rgba(0, 0, 0, 0.5);
+}
+.lever-boss::after {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, #3a3126, #100d08 70%);
+}
+
+/* The swinging group. Its origin is the centre of the boss, so the arm
+   turns in the pivot instead of beside it. */
+.lever-arm {
+  position: absolute;
+  right: 27px;
+  top: 88px;
+  width: 116px;
+  height: 7px;
+  transform-origin: 100% 50%;
+  transform: rotate(-72deg);
+  transition: transform 120ms cubic-bezier(0.22, 0.9, 0.3, 1.2);
+}
+
+.lever-shaft {
+  position: absolute;
+  inset: 0;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #eae0c4 0%, var(--brass) 40%, #48360f 100%);
+  box-shadow: 0 3px 7px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 244, 214, 0.45);
+}
+
+.lever-grip {
+  position: absolute;
+  left: -26px;
+  top: 50%;
+  width: 40px;
+  height: 22px;
+  transform: translateY(-50%) rotate(-8deg);
+  border-radius: 5px 9px 9px 5px;
+  background:
+    linear-gradient(200deg, rgba(255, 255, 255, 0.12) 0 22%, rgba(0, 0, 0, 0) 24%),
+    radial-gradient(70% 60% at 34% 28%, #4a4139, #16110c 76%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 4px 8px rgba(0, 0, 0, 0.55);
+}
+/* the face a thumb has polished flat */
+.lever-grip::after {
+  content: "";
+  position: absolute;
+  inset: 4px 8px 7px 6px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, rgba(222, 204, 170, 0.2), rgba(0, 0, 0, 0) 70%);
+}
+
+#carriage-lever:hover .lever-arm { transform: rotate(-78deg); }
+#carriage-lever:active .lever-arm,
+#carriage-lever.is-thrown .lever-arm { transform: rotate(-108deg); }
 #carriage-lever:focus-visible {
   outline: none;
+}
+#carriage-lever:focus-visible .lever-shaft {
   box-shadow: 0 0 0 3px rgba(28, 31, 42, 0.9), 0 0 0 5px rgba(224, 214, 190, 0.55);
+}
+
+
+/* ------------------------------------------------------------
+   4b. MACHINE BODY - "skeleton portable"
+
+   The body is the machine the carriage is bolted to, so on screen it
+   sits BELOW and BEHIND the platen: the sheet feeds up behind the
+   roller, wraps over it and hangs down toward the typist, which puts
+   the body in front of the platen from the typist's side and under it
+   on screen. Brass shoulders stand either side of the paper and rise
+   to the carriage, the hood is the front face below the opening.
+
+   The side castings are z-index 1, over the sheet opening (0 and below)
+   and under the carriage (2), the sheet (3) and the type guide (10).
+   The typebar basket from the
+   stage is deliberately not carried over: with a full sheet in the
+   machine none of it would ever be visible, and the type guide already
+   marks the printing point.
+   ------------------------------------------------------------ */
+
+/* The body spans the machine exactly. It cannot reach outside it: the
+   platen assembly is already nearly as wide as the desk, so anything
+   hung further out is clipped by #desk.
+
+   Vertically it follows the stage rig, which is drawn at this same
+   scale (58px carriage in both): the casting starts 90px below the top
+   of the carriage, exactly as the rig's body did, and ends in a real
+   bottom edge with feet under it rather than running off the screen.
+   The only thing stretched is the middle, because the prod sheet
+   opening is far taller than the rig's 420px sample sheet.
+
+   It is split across three layers sharing one box, because the paper
+   passes between them. The side castings and the front face (both z 1)
+   are below the carriage and below the sheet, so the paper drapes over
+   the machine the way it does on the rig and on a real machine.
+   The apron (z 4) is the exception: it is the desk repainted over the
+   page below the machine, so it has to be above the paper. It starts
+   below the feet, so no part of the casting is painted over. */
+#machine-body,
+#machine-front,
+#machine-apron {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 90px;
+  bottom: -60px;
+  pointer-events: none;
+}
+#machine-body { z-index: 1; }
+#machine-front { z-index: 1; }
+#machine-apron { z-index: 4; }
+
+/* The apron: the desk itself, repainted over everything below the bottom
+   of the sheet opening. The machine now ends in a real bottom edge, so
+   the untyped remainder of the page cannot be left hanging past it, and
+   a mask cannot trim it (a mask only acts inside its own element's box,
+   which the sheet deliberately overflows on every side). So the desk is
+   simply painted back over it. Both surfaces are viewport-anchored, so
+   this is the same wood, continuing exactly.
+
+   It reaches a viewport out to either side because the sheet travels
+   with the carriage. Its top edge is 10px below the feet, the lowest
+   part of the casting, so the whole machine stays clear of it and only
+   the page that hangs past the machine is painted over. */
+.mb-apron {
+  position: absolute;
+  left: -100vw;
+  right: -100vw;
+  /* the body box ends 60px below the sheet opening; the feet reach 8px
+     past that, so the paper is cut 10px below the feet */
+  top: calc(100% + 18px);
+  height: 200vh;
+  background-color: var(--desk);
+  background-image: var(--desk-art);
+  background-attachment: fixed;
+  /* Fade in over the first 40px so paper that hangs out past the sides of
+     the machine dissolves into the desk instead of ending on a ruled
+     line in mid air. Masking the apron is safe: unlike the sheet, it
+     never overflows its own box. */
+  -webkit-mask: linear-gradient(180deg, rgba(0, 0, 0, 0) 0, #000 40px);
+          mask: linear-gradient(180deg, rgba(0, 0, 0, 0) 0, #000 40px);
+}
+
+/* The main casting: the front face, in front of the paper. Bounded, as
+   on the rig: 202px deep, sitting 22px up from the bottom of the body
+   so the feet show under it. Paper that has travelled past its top edge
+   is behind it; anything further down is faded out by the mask on the
+   sheet opening, so no page ever hangs below the machine. */
+.mb-hood {
+  position: absolute;
+  left: 0;
+  right: 0;
+  /* Starts where the typebar well ends: --well-h down the sheet opening,
+     which begins 42px above this box. Tied to the well rather than fixed,
+     so deepening the cavity does not open a gap between the two. Below
+     the sheet now, so what shows of it is what the paper does not cover:
+     the front face either side of the page and the bottom edge under it. */
+  top: calc(var(--well-h) - 42px);
+  bottom: 22px;
+  border-radius: 8px 8px 10px 10px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.10) 0 4%, rgba(0, 0, 0, 0) 16%),
+    radial-gradient(120% 70% at 22% 0%, rgba(226, 236, 246, 0.10), rgba(226, 236, 246, 0) 58%),
+    linear-gradient(8deg, #35373b 0%, #232529 44%, #101114 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 16px 30px rgba(0, 0, 0, 0.55),
+    0 20px 34px rgba(0, 0, 0, 0.55);
+}
+
+/* the shoulders, standing either side of the paper and rising to the
+   platen, pierced with a lightening hole each */
+.mb-shoulder {
+  position: absolute;
+  top: 0;
+  /* Ends 84px behind the top edge of the hood, as on the rig, so the
+     casting has no visible bottom of its own. */
+  bottom: 140px;
+  /* The rig's 112px casting. The strip that actually shows is the
+     machine's side padding plus 16px, so on a wide desk the whole
+     casting is visible and on a narrow one the inner edge tucks under
+     the sheet opening. */
+  width: 112px;
+  border-radius: 12px 12px 10px 10px;
+  background:
+    linear-gradient(180deg, rgba(255, 238, 200, 0.16) 0 12px, rgba(0, 0, 0, 0) 48px),
+    linear-gradient(158deg, #7d6b41 0%, #453e33 44%, #1c1a17 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 238, 200, 0.2), 0 10px 20px rgba(0, 0, 0, 0.5);
+}
+.mb-shoulder-l { left: 0; }
+.mb-shoulder-r { right: 0; }
+
+/* the lightening hole: a pierced disc with a brass rim, at a fixed
+   distance down the casting rather than a percentage, because this
+   casting is stretched and the rig's was not */
+.mb-shoulder::after {
+  content: "";
+  position: absolute;
+  top: 146px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.9);
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.9),
+    0 0 0 2px rgba(255, 236, 190, 0.22);
+}
+.mb-shoulder-l::after { left: 19px; }
+.mb-shoulder-r::after { right: 19px; }
+
+/* small open ribbon spools, sitting on the shoulders beside the paper */
+.mb-spool {
+  position: absolute;
+  top: 12px;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 36% 30%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 46%),
+    repeating-radial-gradient(circle at 50% 50%, #23201d 0 2px, #171412 2px 4px),
+    radial-gradient(circle at 50% 50%, #3a352f 0 44%, #1b1917 100%);
+  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.8), 0 6px 12px rgba(0, 0, 0, 0.55);
+}
+.mb-spool-l { left: 21px; }
+.mb-spool-r { right: 21px; }
+/* the brass hub the spool turns on */
+.mb-spool::after {
+  content: "";
+  position: absolute;
+  inset: 24px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 36% 30%, rgba(255, 246, 220, 0.7), rgba(255, 246, 220, 0) 44%),
+    linear-gradient(150deg, var(--brass-hi), var(--brass) 44%, #43350f);
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.6);
+}
+/* the ribbon leaving the spool, heading inward toward the strike point */
+.mb-spool::before {
+  content: "";
+  position: absolute;
+  top: 46%;
+  width: 78px;
+  height: 8px;
+  background: linear-gradient(180deg, #2a2226 0%, #120e11 60%, #241d21 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+.mb-spool-l::before { left: 52px; transform: rotate(-13deg); transform-origin: 0 50%; }
+.mb-spool-r::before { right: 52px; transform: rotate(13deg); transform-origin: 100% 50%; }
+
+/* brass cross rods spanning the front face */
+.mb-rod {
+  position: absolute;
+  left: 40px;
+  right: 40px;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #d8c08a, #94773a 42%, #4c3a16 100%);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 240, 200, 0.45);
+}
+.mb-rod-a { bottom: 96px; }
+.mb-rod-b { bottom: 74px; }
+
+/* maker's plate on the front face, stamped with the build version */
+.mb-plate {
+  position: absolute;
+  left: 200px;
+  bottom: 44px;
+  transform: translateX(-50%);
+  padding: 3px 12px 4px;
+  font-family: var(--face);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  white-space: nowrap;
+  color: rgba(246, 232, 196, 0.72);
+  border-radius: 3px;
+  background: linear-gradient(180deg, #4a4126 0%, #2a2418 60%, #14110b 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 236, 190, 0.22), 0 3px 6px rgba(0, 0, 0, 0.6);
+}
+
+/* rubber feet, showing under the bottom edge of the casting */
+.mb-foot {
+  position: absolute;
+  bottom: 2px;
+  width: 64px;
+  height: 18px;
+  border-radius: 4px 4px 9px 9px;
+  background: linear-gradient(180deg, #2a2c30 0%, #131417 70%, #0a0b0d 100%);
+  box-shadow: 0 10px 16px rgba(0, 0, 0, 0.6);
+}
+.mb-foot-l { left: 46px; }
+.mb-foot-r { right: 46px; }
+
+/* wear: chips, rust freckles, hand grime where the machine is grabbed */
+.mb-wear {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 8px 4px at 7% 22%, rgba(198, 204, 212, 0.5) 0 60%, rgba(0, 0, 0, 0) 100%),
+    radial-gradient(ellipse 5px 7px at 94% 40%, rgba(186, 192, 200, 0.42) 0 60%, rgba(0, 0, 0, 0) 100%),
+    radial-gradient(ellipse 4px 3px at 16% 74%, rgba(150, 92, 48, 0.5) 0 60%, rgba(0, 0, 0, 0) 100%),
+    radial-gradient(ellipse 6px 3px at 86% 80%, rgba(146, 90, 46, 0.4) 0 60%, rgba(0, 0, 0, 0) 100%),
+    radial-gradient(50% 30% at 9% 30%, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0) 70%),
+    radial-gradient(50% 30% at 91% 30%, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0) 70%);
 }
 
 
@@ -311,58 +1070,186 @@ body {
    5. SHEET VIEWPORT / PAPER
    ------------------------------------------------------------ */
 
+/* The opening is deliberately NOT a stacking context: no isolation, no
+   z-index of its own. The sheet lives inside it in the flow, but has to be
+   ordered against the carriage and the casting, which are its uncles - so
+   its z-index has to count in #machine, not in here. Anything that makes a
+   context on this element (isolation, z-index, filter, transform, opacity)
+   traps the sheet at the opening's depth and breaks the whole order. */
 #sheet-viewport {
   position: relative;
-  /* Narrower than the sheet on purpose. The sheet travels sideways under
-     a fixed strike point, so an opening as wide as the sheet is uncovered
-     at the start and end of every line. At roughly 50 cell widths the
-     paper covers the whole opening through the middle of a line and only
-     shows machine interior near the margins, which is what the real
-     machine does. */
-  width: min(calc(100vw - 260px), calc(var(--cell-w) * 50));
-  /* Capped short of the full sheet so little of the opening is ever
-     left uncovered once the carriage has travelled. */
+  /* The opening nearly spans the platen, but remains 32px narrower. The
+     sheet itself is allowed to travel beyond this visual frame. */
+  width: min(calc(100vw - 252px), calc(var(--cols) * var(--cell-w) + var(--margin-x) * 2 + 64px));
+  /* Height stays viewport-bound while the sheet travels freely. */
   height: min(calc(100vh - 240px), 68vh, calc(var(--rows) * var(--cell-h) + var(--margin-y) * 2));
-  overflow: hidden;            /* the sheet never shows a scrollbar */
+  /* The opening never clips the sheet. Paper that has travelled past the
+     frame hangs out of the machine the way it does on a real one, and
+     paper fed up past the platen slides in behind it. What keeps the
+     machine visible is z-order, not clipping: the side castings sit
+     behind the sheet and the front face sits in front of it. */
+  overflow: visible;
   scrollbar-width: none;
   margin-top: -10px;
   border-radius: 2px 2px 6px 6px;
-  /* Whatever the sheet does not cover reads as the inside of the
-     machine: a warm blackened well with a little depth, not a flat
-     black rectangle. */
-  background-color: #1b1510;
-  background-image:
-    /* machined ribs running with the carriage */
-    repeating-linear-gradient(90deg,
-      rgba(255, 236, 200, 0.035) 0px,
-      rgba(255, 236, 200, 0) 2px,
-      rgba(0, 0, 0, 0.16) 4px,
-      rgba(0, 0, 0, 0) 9px),
-    /* the well falls away from the light at the top of the opening */
-    radial-gradient(120% 80% at 50% 0%, rgba(120, 96, 62, 0.30), rgba(120, 96, 62, 0) 62%),
-    linear-gradient(180deg, #100c09 0%, #241c15 34%, #34291f 76%, #1d160f 100%);
+  /* No background of its own. Whatever the sheet does not cover is the
+     inside of the machine, and the inside of the machine is drawn by
+     #interior below, not by a flat panel painted over the body. It could
+     not back the well anyway: #interior is at z -1, which paints under
+     this element's own background, so anything painted here erases it. */
+  background: none;
   box-shadow:
-    0 30px 60px rgba(0, 0, 0, 0.55),
-    0 6px 18px rgba(0, 0, 0, 0.4);
-  z-index: 3;
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 #sheet-viewport::-webkit-scrollbar { width: 0; height: 0; }
 
+/* ---- the inside of the machine, seen through the opening -------------
+   Everything the sheet does not cover: the well the typebars hang in
+   and the fan of bars converging on the strike point. The bottom layer
+   of the machine: at -1 it is behind the casting as well as the sheet,
+   which is why #machine isolates - so this does not fall behind the desk.
+
+   Built as a cavity rather than a wall (I4 from stage/interior.html):
+   the side walls rake inward, the floor catches the key light and
+   recedes to a horizon line, and the back wall is darkest where the two
+   meet. The bars then hang in that space instead of being painted on a
+   backdrop. The rake is in pixel stops, not percentages, so the walls
+   keep the same thickness as the opening widens - percentages would
+   have made the perspective drift with the viewport. */
+
+#interior {
+  position: absolute;
+  /* Only the top of the opening: the well the typebars hang in is a
+     shallow box, not the whole depth of the machine. Below it the front
+     casting shows through the opening, as it does on the rig. Deep
+     enough to carry the dropped basket and still leave floor under it. */
+  inset: 0 0 auto 0;
+  height: var(--well-h);
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  /* No fade at the bottom. The old build dissolved the well into the
+     casting, which only worked because there was casting behind it to
+     dissolve into - and there is not: at z -1 the well paints under the
+     opening's own box, so a fade there reveals the desk straight through
+     the machine. A cavity does not need one. Its floor brightens to a lit
+     front lip, and the hood's top edge highlight starts on the next pixel
+     down, so the join reads as the front rail of the well. */
+  background:
+    /* the left wall, raking in from the edge of the opening */
+    linear-gradient(100deg,
+      rgba(96, 108, 124, 0.26) 0 2px,
+      rgba(30, 34, 40, 0.5) 40px,
+      rgba(0, 0, 0, 0) 150px),
+    /* the right wall, the same but lit less - one key light, upper left */
+    linear-gradient(260deg,
+      rgba(72, 82, 96, 0.2) 0 2px,
+      rgba(26, 30, 36, 0.5) 40px,
+      rgba(0, 0, 0, 0) 150px),
+    /* the floor, brightening toward the front lip of the well */
+    linear-gradient(180deg,
+      rgba(0, 0, 0, 0) 0 58%,
+      rgba(118, 130, 146, 0.05) 72%,
+      rgba(142, 156, 174, 0.16) 88%,
+      rgba(168, 182, 200, 0.22) 100%),
+    /* the back wall, darkest at the horizon where the floor meets it */
+    radial-gradient(120% 62% at 50% 56%, rgba(0, 0, 0, 0.88), rgba(0, 0, 0, 0.2) 92%),
+    linear-gradient(180deg, #090a0d 0%, #0f1216 62%, #1b1f25 100%);
+  box-shadow: inset 0 16px 34px rgba(0, 0, 0, 0.92);
+}
+
+/* The horizon: the join between floor and back wall. A single lit pixel,
+   faded out at both ends so it never touches the side walls. */
+#interior::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 72%;
+  height: 1px;
+  background: linear-gradient(90deg,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(186, 200, 218, 0.22) 30%,
+    rgba(186, 200, 218, 0.22) 70%,
+    rgba(0, 0, 0, 0) 100%);
+}
+
+/* The fan converges upward on the segment, which hangs --bar-drop below
+   the top of the opening: the bars sweep down and out into the well from
+   there and swing up to the platen to print. The mask keeps the middle
+   clear, because at that radius the bars are closer together than a pixel
+   and would merge into a solid disc. */
+.mb-typebars {
+  position: absolute;
+  left: 50%;
+  top: var(--bar-drop);
+  /* Wide enough that the bars still reach the edges of the opening when
+     the carriage has run the paper to one side: what is not under paper
+     has to read as the inside of a machine, not as an empty box. */
+  width: 100%;
+  height: 380px;
+  transform: translateX(-50%);
+  background:
+    repeating-conic-gradient(from 118deg at 50% 0%,
+      rgba(196, 204, 214, 0.55) 0deg 0.8deg,
+      rgba(20, 22, 26, 0) 0.8deg 3.1deg,
+      rgba(150, 158, 168, 0.34) 3.1deg 3.7deg,
+      rgba(20, 22, 26, 0) 3.7deg 6.2deg);
+  -webkit-mask: radial-gradient(80% 92% at 50% 0%,
+      rgba(0, 0, 0, 0) 16%, #000 27%, rgba(0, 0, 0, 0.55) 68%, rgba(0, 0, 0, 0) 100%);
+          mask: radial-gradient(80% 92% at 50% 0%,
+      rgba(0, 0, 0, 0) 16%, #000 27%, rgba(0, 0, 0, 0.55) 68%, rgba(0, 0, 0, 0) 100%);
+}
+
+/* the segment: the slotted arc the bars rise through, below the tips */
+.mb-segment {
+  position: absolute;
+  left: 50%;
+  top: calc(26px + var(--bar-drop));
+  width: 250px;
+  height: 44px;
+  transform: translateX(-50%);
+  border-radius: 0 0 50% 50% / 0 0 100% 100%;
+  background:
+    repeating-linear-gradient(90deg,
+      rgba(0, 0, 0, 0.75) 0 2px, rgba(184, 192, 202, 0.45) 2px 3px, rgba(0, 0, 0, 0) 3px 6px),
+    linear-gradient(0deg, #6a7079 0%, #34383d 60%, #16181b 100%);
+  box-shadow: 0 3px 7px rgba(0, 0, 0, 0.6);
+}
+
+/* The ribbon, running the width of the machine across the bar tips. Rides
+   down with the basket, so it stays where the slugs meet it. */
+.mb-ribbon {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(74px + var(--bar-drop));
+  height: 13px;
+  border-top: 1px solid rgba(226, 214, 196, 0.34);
+  background:
+    repeating-linear-gradient(90deg,
+      rgba(255, 255, 255, 0.05) 0 1px, rgba(0, 0, 0, 0) 1px 3px),
+    linear-gradient(180deg, rgba(255, 236, 214, 0.28) 0 12%, rgba(0, 0, 0, 0) 46%),
+    linear-gradient(180deg, #63505a 0%, #33272c 50%, #150f12 100%);
+  box-shadow: 0 4px 9px rgba(0, 0, 0, 0.7);
+}
+
 /* Curl: the sheet rolls over the platen, so the top of the opening is
-   compressed and shadowed. Fixed to the opening, not to the sheet. */
+   compressed and shadowed. Fixed to the opening, not to the sheet, and
+   part of the opening in z-order too - it shades the well, not the page. */
 #sheet-viewport::before {
   content: "";
   position: absolute;
   inset: 0 0 auto 0;
   height: 68px;
-  z-index: 8;
+  z-index: 0;
   pointer-events: none;
   background:
     linear-gradient(180deg,
-      rgba(24, 18, 12, 0.62) 0%,
-      rgba(41, 32, 22, 0.34) 26%,
-      rgba(70, 56, 38, 0.14) 58%,
+      rgba(10, 12, 14, 0.62) 0%,
+      rgba(22, 26, 30, 0.34) 26%,
+      rgba(44, 50, 56, 0.14) 58%,
       rgba(0, 0, 0, 0) 100%);
 }
 
@@ -371,15 +1258,18 @@ body {
   content: "";
   position: absolute;
   inset: 0;
-  z-index: 9;
+  z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(120% 100% at 50% 46%, rgba(0, 0, 0, 0) 52%, rgba(38, 28, 16, 0.30) 100%),
-    linear-gradient(0deg, rgba(30, 22, 14, 0.34) 0%, rgba(0, 0, 0, 0) 16%);
+    radial-gradient(120% 100% at 50% 46%, rgba(0, 0, 0, 0) 52%, rgba(14, 16, 20, 0.34) 100%),
+    linear-gradient(0deg, rgba(10, 12, 15, 0.38) 0%, rgba(0, 0, 0, 0) 16%);
 }
 
+/* z 3 counts in #machine, not in the opening: above the casting and the
+   carriage assembly, below only the apron and the front carriage hardware. */
 #sheet {
   position: relative;
+  z-index: 3;
   width: calc(var(--cols) * var(--cell-w) + var(--margin-x) * 2);
   height: calc(var(--rows) * var(--cell-h) + var(--margin-y) * 2);
   transform: translate3d(var(--sheet-x), var(--sheet-y), 0);
@@ -393,17 +1283,54 @@ body {
       var(--paper) 38%,
       var(--paper) 62%,
       var(--paper-shade) 100%);
-  transition: transform 34ms cubic-bezier(0.16, 0.9, 0.28, 1.06);
+  box-shadow:
+    0 30px 60px rgba(0, 0, 0, 0.55),
+    0 6px 18px rgba(0, 0, 0, 0.4);
+  transition:
+    transform 34ms cubic-bezier(0.16, 0.9, 0.28, 1.06),
+    filter 220ms ease-out;
 }
 
-/* Shudder on each strike. app.js adds .is-struck for ~60ms. */
-#sheet.is-struck { animation: sheet-shudder 60ms linear; }
+/* Shudder on each strike. app.js alternates .is-struck and .is-struck-b so
+   consecutive strikes restart the animation without a forced reflow: the two
+   classes carry different animation-names, so swapping them is a genuine
+   restart. Toggling one class off and on in the same frame is not. */
+#sheet.is-struck   { animation: sheet-shudder 60ms linear; }
+#sheet.is-struck-b { animation: sheet-shudder-b 60ms linear; }
 
 @keyframes sheet-shudder {
   0%   { transform: translate3d(var(--sheet-x), var(--sheet-y), 0); }
   35%  { transform: translate3d(calc(var(--sheet-x) + 0.5px), calc(var(--sheet-y) - 0.4px), 0); }
   70%  { transform: translate3d(calc(var(--sheet-x) - 0.35px), calc(var(--sheet-y) + 0.3px), 0); }
   100% { transform: translate3d(var(--sheet-x), var(--sheet-y), 0); }
+}
+
+/* Identical motion, separate name. See the note above. */
+@keyframes sheet-shudder-b {
+  0%   { transform: translate3d(var(--sheet-x), var(--sheet-y), 0); }
+  35%  { transform: translate3d(calc(var(--sheet-x) + 0.5px), calc(var(--sheet-y) - 0.4px), 0); }
+  70%  { transform: translate3d(calc(var(--sheet-x) - 0.35px), calc(var(--sheet-y) + 0.3px), 0); }
+  100% { transform: translate3d(var(--sheet-x), var(--sheet-y), 0); }
+}
+
+/* Off-screen field that exists only to summon the software keyboard on touch
+   devices. It must stay focusable, so no display:none / visibility:hidden.
+   The 16px font-size is what stops iOS Safari zooming the page on focus. */
+#key-catcher {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  outline: none;
+  z-index: -1;
+  opacity: 0;
+  font-size: 16px;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
 }
 
 /* Fibre grain. Two turbulence layers: fine speckle plus a stretched
@@ -447,9 +1374,11 @@ body {
     rgba(72, 56, 32, 0.20) 100%);
 }
 
-/* The card dims the sheet very slightly while open. No modal scrim. */
-#sheet-viewport { transition: filter 220ms ease-out; }
-body:has(#settings-card.is-open) #sheet-viewport { filter: brightness(0.965) saturate(0.99); }
+/* The card dims the sheet very slightly while open. No modal scrim. On the
+   sheet, never on the opening: a filter on the opening would make it a
+   stacking context and drop the sheet back behind the carriage. The sheet
+   is already one (it has a transform), so nothing moves. */
+body:has(#settings-card.is-open) #sheet { filter: brightness(0.965) saturate(0.99); }
 
 
 /* ------------------------------------------------------------
@@ -699,6 +1628,7 @@ body:has(#settings-card.is-open) #sheet-viewport { filter: brightness(0.965) sat
   pointer-events: none;
   font-family: var(--face);
   font-size: 15px;
+  font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   font-variant: small-caps;
@@ -870,7 +1800,7 @@ body[data-realism="on"] .rail-key[data-action="settings"] .cap::before {
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
-  padding: 36px 32px 30px;
+  padding: 28px 32px 30px;
   z-index: 40;
   color: var(--ink);
   font-family: var(--face);
@@ -913,10 +1843,40 @@ body[data-realism="on"] .rail-key[data-action="settings"] .cap::before {
   pointer-events: none;
   opacity: 0.30;
   mix-blend-mode: multiply;
+  /* Grain only. The coffee ring is its own element: a layer here would be
+     multiplied by this element's 0.30 opacity and all but vanish. */
   background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23c)' opacity='0.6'/%3E%3C/svg%3E"),
-    /* coffee ring, upper left */
-    radial-gradient(circle at 22% 16%, rgba(0, 0, 0, 0) 26px, rgba(122, 84, 40, 0.20) 27px, rgba(122, 84, 40, 0.26) 30px, rgba(122, 84, 40, 0) 32px);
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23c)' opacity='0.6'/%3E%3C/svg%3E");
+}
+
+/* ---- coffee ring -------------------------------------------------
+   Drawn from assets/vector/coffee-stain1.svg, which is one filled path.
+   Used as a MASK rather than as an image, so the colour and the strength
+   live here rather than in the file: the artwork's own #8C3D05 is far too
+   orange and too solid for a stain that has to sit under readable type.
+
+   Multiply, so it darkens the stock and the blue rules it crosses instead
+   of covering them, and no z-index, so it stays behind the settings -
+   coffee soaks into the card, it does not sit on top of the writing. */
+.card-stain {
+  position: absolute;
+  left: 304px;
+  bottom: 24px;
+  width: 278px;
+  aspect-ratio: 338 / 327;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  /* Starting point. One number to tune the whole stain. */
+  opacity: 0.2;
+  transform: rotate(-120deg);
+  /* uneven wash rather than a flat fill, lighter where it dried thinner */
+  background:
+    radial-gradient(64% 62% at 42% 36%,
+      rgba(138, 92, 44, 0.82) 0%,
+      rgba(112, 68, 28, 0.94) 62%,
+      rgba(94, 54, 20, 1) 100%);
+  -webkit-mask: url("assets/vector/coffee-stain1.svg") center / contain no-repeat;
+          mask: url("assets/vector/coffee-stain1.svg") center / contain no-repeat;
 }
 
 /* dog-eared bottom right corner */
@@ -932,7 +1892,7 @@ body[data-realism="on"] .rail-key[data-action="settings"] .cap::before {
     /* the folded flap, lit from upper left */
     linear-gradient(135deg, rgba(0, 0, 0, 0) 49%, #efe9d6 50%, #cfc4a4 100%),
     /* the cut corner, showing the desk through */
-    linear-gradient(315deg, rgba(24, 19, 14, 0.92) 49.6%, rgba(0, 0, 0, 0) 50%);
+    linear-gradient(315deg, rgba(9, 15, 12, 0.92) 49.6%, rgba(0, 0, 0, 0) 50%);
   filter: drop-shadow(-2px -2px 3px rgba(0, 0, 0, 0.22));
   border-bottom-right-radius: 7px;
 }
@@ -968,11 +1928,11 @@ body[data-realism="on"] .rail-key[data-action="settings"] .cap::before {
 .card-title {
   position: relative;
   z-index: 2;
-  margin: 0 0 calc(var(--card-rule-gap) * 0.9);
+  margin: 0 0 var(--card-rule-gap);
   font-family: var(--face);
-  font-size: 1.18em;
+  font-size: 1.3em;
   line-height: var(--card-rule-gap);
-  font-weight: 400;
+  font-weight: 600;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--ink);
@@ -982,29 +1942,32 @@ body[data-realism="on"] .rail-key[data-action="settings"] .cap::before {
 .setting {
   position: relative;
   z-index: 2;
-  margin: 0 0 calc(var(--card-rule-gap) * 0.75);
+  margin: 0 0 var(--card-rule-gap);
 }
 
 .setting:last-of-type { margin-bottom: 8px; }
 
 .setting-label {
+  position: relative;
+  top: 2px;
   display: block;
-  font-size: 0.82em;
+  font-size: 1em;
   line-height: var(--card-rule-gap);
+  font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   opacity: 0.72;
-  margin-bottom: 4px;
+  margin: 0;
 }
 
 .setting-note {
-  margin: 2px 0 0 78px;
-  font-size: 0.8em;
+  margin: 0 0 0 28px;
+  font-size: 1em;
   /* one ruled line per line of prose */
   line-height: var(--card-rule-gap);
   color: var(--ink-faint);
   opacity: 0.82;
-  max-width: 32ch;
+  max-width: 50ch;
 }
 
 /* --- the rubber-stamped X in the corner --------------------- */
@@ -1015,10 +1978,10 @@ body[data-realism="on"] .rail-key[data-action="settings"] .cap::before {
 .card-close {
   position: absolute;
   z-index: 3;
-  top: 10px;
+  top: 17px;
   right: 12px;
-  width: 54px;
-  height: 54px;
+  width: 40px;
+  height: 40px;
   padding: 0;
   border: 0;
   cursor: pointer;
@@ -1081,6 +2044,7 @@ body[data-realism="on"] .rail-key[data-action="settings"] .cap::before {
   gap: 16px;
   cursor: pointer;
   user-select: none;
+  min-height: var(--card-rule-gap);
 }
 
 .lever input[type="checkbox"] {
@@ -1152,10 +2116,39 @@ body[data-realism="on"] .rail-key[data-action="settings"] .cap::before {
 }
 
 .lever-label {
-  font-size: 0.88em;
+  position: relative;
+  top: 2px;
+  font-size: 1em;
+  font-weight: 600;
   letter-spacing: 0.15em;
   text-transform: uppercase;
   color: var(--ink);
+}
+
+/* An off lever crosses out its label like a red editorial correction. */
+.lever input:not(:checked) ~ .lever-label::after {
+  content: "";
+  position: absolute;
+  left: -3px;
+  right: -3px;
+  top: calc(50% - 2px);
+  height: 2px;
+  background: var(--card-rule-red);
+  opacity: 0.82;
+  transform: rotate(-1.5deg) scaleX(0);
+  transform-origin: left center;
+  box-shadow: 0 1px 0 rgba(168, 56, 47, 0.22);
+  animation: strike-label 240ms cubic-bezier(0.22, 0.72, 0.28, 1) forwards;
+}
+
+@keyframes strike-label {
+  from { transform: rotate(-1.5deg) scaleX(0); }
+  to   { transform: rotate(-1.5deg) scaleX(1); }
+}
+
+.setting[data-setting="realism"] .setting-note {
+  position: relative;
+  top: 2px;
 }
 
 /* --- select on card stock with an ink chevron --------------- */
@@ -1163,13 +2156,16 @@ body[data-realism="on"] .rail-key[data-action="settings"] .cap::before {
 /* Shared face for both the native select and the custom trigger, so the
    closed control looks identical whichever one app.js ends up showing. */
 #opt-typeface,
+#opt-export-format,
+#opt-sound-profile,
 .select-face {
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
   display: block;
   width: 100%;
-  padding: 11px 40px 11px 14px;
+  height: var(--card-rule-gap);
+  padding: 4px 40px 4px 14px;
   font-family: var(--face);
   font-size: 0.95em;
   line-height: 1.3;
@@ -1189,6 +2185,8 @@ body[data-realism="on"] .rail-key[data-action="settings"] .cap::before {
 }
 
 #opt-typeface:focus-visible,
+#opt-export-format:focus-visible,
+#opt-sound-profile:focus-visible,
 .select-face:focus-visible {
   outline: none;
   border-color: var(--ink);
@@ -1196,6 +2194,16 @@ body[data-realism="on"] .rail-key[data-action="settings"] .cap::before {
 }
 
 #opt-typeface option {
+  background: var(--card-stock);
+  color: var(--ink);
+}
+
+#opt-export-format option {
+  background: var(--card-stock);
+  color: var(--ink);
+}
+
+#opt-sound-profile option {
   background: var(--card-stock);
   color: var(--ink);
 }
@@ -1230,12 +2238,12 @@ body[data-realism="on"] .rail-key[data-action="settings"] .cap::before {
 /* Each .setting is its own stacking context at z-index 2, so the open list
    would otherwise be painted under the Sound row that follows it. Lift the
    whole row while the list is open. */
-.setting[data-setting="typeface"]:has(.select-face[aria-expanded="true"]) {
+.setting:has(.select-face[aria-expanded="true"]) {
   z-index: 20;
 }
 
 /* the real control stays in the DOM and focusable-adjacent, just unseen */
-.select-shell > #opt-typeface {
+.select-shell > select {
   position: absolute;
   left: 0;
   top: 0;
@@ -1312,7 +2320,7 @@ body[data-realism="on"] .rail-key[data-action="settings"] .cap::before {
   display: block;
   width: 100%;
   height: 30px;
-  margin: 18px 0 0;
+  margin: 1px 0;
   background: transparent;
   cursor: pointer;
 }
@@ -1387,45 +2395,6 @@ body[data-realism="on"] .rail-key[data-action="settings"] .cap::before {
 /* Sound off greys the wheel out */
 body[data-sound="off"] .thumbwheel { opacity: 0.42; }
 
-/* --- ribbon spool wear indicator ---------------------------- */
-
-.spool {
-  position: relative;
-  width: 100%;
-  height: 12px;
-  margin-bottom: 10px;
-  border-radius: 6px;
-  background: linear-gradient(180deg, rgba(120, 104, 72, 0.20), rgba(120, 104, 72, 0.10));
-  box-shadow: inset 0 1px 2px rgba(90, 76, 48, 0.35);
-  overflow: hidden;
-}
-
-/* the inked portion left on the spool, driven by --wear (0-1) */
-.spool::before {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: calc((1 - var(--wear, 0)) * 100%);
-  border-radius: 6px;
-  background: linear-gradient(180deg, var(--ink-faint), var(--ink));
-  transition: width 260ms ease-out;
-}
-
-/* spool ticks */
-.spool::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: repeating-linear-gradient(90deg,
-    rgba(255, 252, 240, 0.35) 0px,
-    rgba(255, 252, 240, 0) 1px,
-    rgba(255, 252, 240, 0) 11px,
-    rgba(255, 252, 240, 0.35) 12px);
-  opacity: 0.5;
-}
-
-body[data-ribbon="worn"] .spool::before { filter: saturate(0.6) brightness(1.35); }
-
 /* --- small key-style controls on card stock ----------------- */
 
 .card-key {
@@ -1479,7 +2448,7 @@ body[data-ribbon="worn"] .spool::before { filter: saturate(0.6) brightness(1.35)
 
 
 /* ------------------------------------------------------------
-   11. ERASE CONFIRMATION - carbon copy slip
+   11. ERASE CONFIRMATION - ruled settings notecard
    ------------------------------------------------------------ */
 
 #erase-confirm {
@@ -1489,43 +2458,102 @@ body[data-ribbon="worn"] .spool::before { filter: saturate(0.6) brightness(1.35)
   top: 40%;
   width: 452px;
   max-width: calc(100vw - 40px);
-  padding: 32px 30px 26px;
+  padding: 30px 32px 30px;
   transform: translate(-50%, -50%) rotate(-1.6deg);
-  border-radius: 3px;
+  border-radius: 7px;
   font-family: var(--face);
-  color: #2b2434;
+  color: var(--ink);
 
-  /* semi-transparent grey-purple carbon stock */
-  background-color: rgba(150, 140, 160, 0.62);
+  /* Same ruled buff stock and paper grain language as Settings. */
+  background-color: var(--card-stock);
   background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='k'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23k)' opacity='0.45'/%3E%3C/svg%3E"),
-    linear-gradient(158deg, rgba(190, 182, 200, 0.55) 0%, rgba(132, 122, 146, 0.55) 62%, rgba(108, 99, 124, 0.6) 100%);
+    radial-gradient(24px 18px at 86% 82%, rgba(84, 72, 52, 0.14), rgba(84, 72, 52, 0) 70%),
+    repeating-linear-gradient(180deg,
+      rgba(0, 0, 0, 0) 0,
+      rgba(0, 0, 0, 0) calc(var(--card-rule-gap) - 1px),
+      var(--card-rule-blue) calc(var(--card-rule-gap) - 1px),
+      var(--card-rule-blue) var(--card-rule-gap)),
+    linear-gradient(163deg, #efe7cf 0%, var(--card-stock) 46%, var(--card-stock-lo) 100%);
+  background-position: 0 0, 0 19px, 0 0;
   box-shadow:
-    0 22px 40px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35);
-  animation: carbon-in 240ms cubic-bezier(0.16, 0.84, 0.3, 1.06);
+    0 26px 44px rgba(0, 0, 0, 0.42),
+    0 8px 14px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  animation: erase-card-out 210ms cubic-bezier(0.4, 0, 0.9, 0.4) forwards;
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
   justify-content: flex-end;
 }
 
-@keyframes carbon-in {
+#erase-confirm.is-open {
+  animation: erase-card-in 240ms cubic-bezier(0.16, 0.84, 0.3, 1.06) forwards;
+}
+
+#erase-confirm::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.28;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23c)' opacity='0.6'/%3E%3C/svg%3E");
+}
+
+#erase-confirm::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 28px;
+  height: 28px;
+  pointer-events: none;
+  background-image:
+    linear-gradient(135deg, rgba(0, 0, 0, 0) 49%, #efe9d6 50%, #cfc4a4 100%),
+    linear-gradient(315deg, rgba(9, 15, 12, 0.92) 49.6%, rgba(0, 0, 0, 0) 50%);
+  filter: drop-shadow(-2px -2px 3px rgba(0, 0, 0, 0.2));
+  border-bottom-right-radius: 7px;
+}
+
+#erase-confirm > * { z-index: 2; }
+#erase-confirm .card-rule { top: 50px; z-index: 1; }
+
+@keyframes erase-card-in {
   0%   { opacity: 0; transform: translate(-50%, calc(-50% - 26px)) rotate(-4deg); }
   70%  { opacity: 1; transform: translate(-50%, calc(-50% + 3px)) rotate(-1deg); }
   100% { opacity: 1; transform: translate(-50%, -50%) rotate(-1.6deg); }
 }
 
-.carbon-text {
-  flex: 1 0 100%;
-  margin: 0 0 10px;
-  font-size: 16px;
-  line-height: 1.6;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #241d2e;
-  text-shadow: 0 0 0.5px rgba(36, 29, 46, 0.5);
+@keyframes erase-card-out {
+  from { opacity: 1; transform: translate(-50%, -50%) rotate(-1.6deg); }
+  to   { opacity: 0; transform: translate(-50%, calc(-50% - 20px)) rotate(-3deg); }
 }
+
+.erase-confirm-title {
+  flex: 1 0 100%;
+  min-height: var(--card-rule-gap);
+  margin: -12px 0;
+  font-size: 1.3em;
+  font-weight: 700;
+  line-height: var(--card-rule-gap);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.erase-confirm-text {
+  flex: 1 0 100%;
+  margin: 30px 0 4px;
+  font-size: 16px;
+  line-height: var(--card-rule-gap);
+  letter-spacing: 0.1em;
+  color: var(--ink-faint);
+  opacity: 0.82;
+  text-shadow: 0 0 0.5px rgba(28, 31, 42, 0.35);
+}
+
+#erase-confirm .card-close { z-index: 4; top: 10px; }
 
 #erase-confirm .card-key {
   min-width: 104px;
@@ -1556,12 +2584,22 @@ body[data-ribbon="worn"] .spool::before { filter: saturate(0.6) brightness(1.35)
    ------------------------------------------------------------ */
 
 @media (prefers-reduced-motion: reduce) {
+  .lever input:not(:checked) ~ .lever-label::after {
+    animation: none;
+    transform: rotate(-1.5deg) scaleX(1);
+  }
+
   #sheet {
     transition: none;
     animation: none !important;
   }
 
-  #sheet.is-struck { animation: none; }
+  #platen-assembly,
+  #platen-front,
+  #platen-knob { transition: none; }
+
+  #sheet.is-struck,
+  #sheet.is-struck-b { animation: none; }
 
   #type-guide::after { animation: none; opacity: 0.85; }
 
@@ -1570,8 +2608,7 @@ body[data-ribbon="worn"] .spool::before { filter: saturate(0.6) brightness(1.35)
   .rail-key .ring,
   .card-key,
   .lever-art::after,
-  #carriage-lever,
-  .spool::before {
+  .lever-arm {
     transition-duration: 1ms;
     transition-timing-function: linear;
   }
@@ -1604,10 +2641,7 @@ body[data-ribbon="worn"] .spool::before { filter: saturate(0.6) brightness(1.35)
   :root { --scale: 1.6; }
   /* keep a lane clear on the left for the key stack */
   #sheet-viewport {
-    width: min(calc(100vw - 240px), calc(var(--cols) * var(--cell-w) + var(--margin-x) * 2));
-  }
-  #platen-assembly {
-    width: min(calc(100vw - 210px), calc(var(--cols) * var(--cell-w) + var(--margin-x) * 2 + 96px));
+    width: min(calc(100vw - 242px), calc(var(--cols) * var(--cell-w) + var(--margin-x) * 2 + 64px));
   }
 }
 
@@ -1619,12 +2653,24 @@ body[data-ribbon="worn"] .spool::before { filter: saturate(0.6) brightness(1.35)
 
   #machine { padding: 0 10px 130px; }
 
+  /* The body box is positioned against the machine's padding box, so the
+     bottom padding the rail needs here has to be taken back off it,
+     otherwise the casting drops away from the sheet opening. */
+  #machine-body,
+  #machine-front,
+  #machine-apron { bottom: 70px; }
+
   #sheet-viewport {
     width: calc(100vw - 32px);
     height: min(calc(100vh - 250px), 62vh, calc(var(--rows) * var(--cell-h) + var(--margin-y) * 2));
   }
 
-  #platen-assembly { width: calc(100vw - 20px); }
+  /* The return linkage reaches 176px left of the carriage, which is more
+     than a narrow desk has to give. Shrink it about its mounting point. */
+  #carriage-lever {
+    transform: scale(0.72);
+    transform-origin: 100% 62%;
+  }
 
   /* Too little height for the bottom-left stack, so the rail unfolds
      into a row along the bottom edge, arms reaching up. */
@@ -1662,11 +2708,107 @@ body[data-ribbon="worn"] .spool::before { filter: saturate(0.6) brightness(1.35)
     }
     .setting-note { margin-left: 0; }
     #erase-confirm { padding: 26px 20px 20px; }
-    .carbon-text { font-size: 14.5px; }
+    .erase-confirm-text { font-size: 14.5px; }
   }
 }
 
 @media (max-height: 560px) {
   #machine { padding-bottom: 110px; }
+  #machine-body,
+  #machine-front,
+  #machine-apron { bottom: 50px; }
   #sheet-viewport { height: min(calc(100vh - 210px), 60vh); }
+}
+
+/* Phone-sized screens, upright. A 65-column line is about 780px at the
+   narrow-screen scale and never fits across a phone at any scale worth
+   reading, and the carriage keeps the active cell pinned under the type
+   guide either way. So shrinking the type to show more columns buys
+   nothing and costs legibility. Scale the paper back up instead and let
+   the line crop horizontally, exactly as it already does.
+
+   Deliberately keyed on width AND height: the 900px rule above also
+   catches short desktop windows and phones held sideways, where the
+   vertical room for taller rows genuinely is not there. Those keep the
+   compact scale.
+
+   --scale drives the cell box, the glyph size, the sheet margins and the
+   carriage width together, so everything stays in proportion. app.js
+   measures #ink-layer rather than reading these tokens, and relayout()
+   runs on resize, so the strike point follows with no JS change. */
+@media (max-width: 620px) and (min-height: 600px) {
+  :root { --scale: 1.85; }
+
+  /* Taller rows eat the vertical budget faster. Give the sheet back the
+     room the larger type needs, taken from the gap above the rail. */
+  #sheet-viewport {
+    height: min(calc(100vh - 230px), 66vh, calc(var(--rows) * var(--cell-h) + var(--margin-y) * 2));
+  }
+}
+
+
+/* ------------------------------------------------------------
+   14. PRINT
+   The whole premise is paper, so printing should give paper:
+   drop the machine, the desk and every control, and let the
+   sheet flow on its own. The ink layer keeps its jitter, which
+   is the point of printing this rather than the export file.
+   ------------------------------------------------------------ */
+
+@media print {
+  #machine-body,
+  #machine-front,
+  #machine-apron,
+  #platen-assembly,
+  #platen-front,
+  #platen-knob,
+  #interior,
+  #bail,
+  #paper-grain,
+  #type-guide,
+  #carriage-lever,
+  #rail,
+  #settings-card,
+  #erase-confirm,
+  #key-catcher,
+  #version-plate,
+  #a11y-status { display: none !important; }
+
+  html,
+  body,
+  #desk,
+  #machine {
+    background: #fff;
+    padding: 0;
+    margin: 0;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+    box-shadow: none;
+  }
+
+  /* The viewport exists to crop the sheet to the machine. In print there is
+     no machine, so it must not crop or scroll. */
+  #sheet-viewport {
+    position: static;
+    height: auto;
+    width: auto;
+    overflow: visible;
+    box-shadow: none;
+    filter: none;
+  }
+
+  /* The carriage translate is a screen affordance. On paper the sheet sits
+     still and the page breaks do the scrolling. */
+  #sheet {
+    position: static;
+    transform: none !important;
+    animation: none !important;
+    box-shadow: none;
+    filter: none;
+    margin: 0 auto;
+  }
+
+  .impression { color: #111; }
+  .correction-patch { background: #fff; box-shadow: none; }
 }

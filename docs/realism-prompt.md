@@ -12,6 +12,8 @@ The single most important realism decision is that the app must behave mechanica
 
 1. **Monospaced, grid-locked characters.** Every glyph occupies one identical cell. No kerning, no ligatures, no proportional spacing, no variable line height. The page is a fixed character grid (recommended 65 characters per line, 54 lines per page for US Letter at 10 CPI / 6 LPI).
 2. **The carriage moves, not the text.** When the user types, the paper does not scroll under a fixed cursor in the way a text editor scrolls. The strike point stays where it is on screen and the sheet shifts left one cell per character, or the sheet stays and the carriage assembly slides. Pick one model and keep it. See section 6.
+
+The paper is continuous rather than page-replacing. It starts at 54 lines and grows downward in 20-line sections as the carriage approaches the bottom. Crossing the initial boundary must never discard earlier impressions. Navigation, persistence, copy, and export cover every created row.
 3. **Ink is additive and permanent - under Realism Mode.** Struck ink stays on the sheet and correction is a separate modeled affordance, not `Backspace`. This is the honest mechanical behavior, but it is hostile to a first-time user, so it lives behind a **Realism Mode** toggle that is **off by default**. Rules 1, 2, and 4 always apply; only rule 3 is switchable. See section 7 for the two modes.
 4. **Nothing is perfect twice.** Every impression varies slightly in ink density, vertical baseline offset, horizontal jitter, and rotation. The same letter typed ten times must produce ten visibly different marks. This is the highest-payoff detail in the entire app.
 
@@ -37,15 +39,11 @@ This is where realism is won. Each struck character is a composite of several ra
 - **Vertical offset:** plus or minus 0.5 to 1.5 px. Typebars do not land on a perfect baseline.
 - **Horizontal jitter:** plus or minus 0.5 px within the cell, never enough to break grid alignment.
 - **Rotation:** plus or minus 0.4 to 0.8 degrees.
-- **Ink density:** opacity 0.72 to 1.0, weighted so most strikes are strong and occasional ones are faint. With Realism Mode off, this range is stable for the whole session. With Realism Mode on, it drifts under the ribbon wear model below.
+- **Ink density:** opacity 0.72 to 1.0, weighted so most strikes are strong and occasional ones are faint. This range stays stable for the whole session.
 - **Bleed:** a 0.3 to 0.6 px blur or a very slight text-shadow in the ink color, simulating ink spreading into paper fibre. Heavier on the cotton-paper theme, lighter on the onionskin theme.
 - **Edge break-up:** the ribbon does not deposit evenly. Either use TT2020's variant glyphs, or apply a subtle SVG turbulence/displacement filter, or overlay a fine noise mask on the text layer. Prefer the font variants; filters on live text are expensive.
 
 **Ink color is not black, and it leans blue.** Use a very dark blue-black, roughly `#1c1f2a` to `#232838`, with a faint cool cast that is visible when a strike lands light. Not brown-black - brown reads as an aged carbon ribbon, blue-black reads as a well-inked machine and holds contrast better against the warm paper. Pure `#000` reads digital. Faint strikes should desaturate toward `#3a4055` rather than toward grey. Offer a red-ribbon mode (the bottom half of a bichrome ribbon, `#8f2b23`) toggled the way the real machine's ribbon selector works.
-
-**Ribbon wear (Realism Mode only).** A real ribbon gives up its ink as it runs. Model it as a wear counter that increments per strike and drags the whole ink-density range down as it climbs: full ink for roughly the first 800 to 1000 strikes, then a slow, non-linear fade so that by 3000 strikes impressions sit around 0.45 to 0.7 opacity, visibly grey-blue and patchy, with faint strikes becoming more frequent than strong ones. The fade must be slow enough that the user notices it as a mood shift, not as the app breaking - never let it drop below legibility. Bleed increases slightly as density drops (a dry ribbon smears more than it prints).
-
-Wear is per-ribbon, persisted alongside the page, and does **not** reset when a new sheet is fed - only a ribbon swap resets it. Surface the swap as a small **NEW RIBBON** control that appears on the settings card only when Realism Mode is on and wear is past roughly half; using it plays the ribbon-spool sound and returns density to full. Toggling Realism Mode off restores full density immediately without resetting the counter; toggling it back on resumes at the wear level where it left off. Impressions already on the page keep their frozen density and are never retroactively faded or restored.
 
 **Overstrike.** When two characters land in the same cell, both render, both stacked, ink density adds toward opaque. This is the mechanic that makes retyping and struck-through corrections look authentic.
 
@@ -60,12 +58,24 @@ Wear is per-ribbon, persisted alongside the page, and does **not** reset when a 
 
 ## 5. The machine chrome
 
-The typing surface should sit inside a suggested machine, not float. Minimum viable machine: platen roller at the top edge of the sheet, paper bail bar with two rubber rollers crossing the sheet, and the type guide / strike point at the bottom center of the visible ink line. A full-body illustration is optional; the platen, bail, and strike point are not.
+The typing surface should sit inside a suggested machine, not float. Minimum viable machine: platen roller at the top edge of the sheet, paper bail bar with two rubber rollers crossing the sheet, and the type guide / strike point at the bottom center of the visible ink line. A full-body illustration is optional; the platen, bail, and strike point are not. Keep platen wear restrained: fine service scratches, shallow cleaning abrasion, and the bruised band where the slugs land, without large stains or theatrical damage.
+
+**The desk.** The machine stands on a planked desktop in green-black stained oak: board seams at a fixed pitch, the stain sitting in the open pores so the grain reads greener rather than lighter, one key light from the upper left, and a heavy falloff toward the bottom of the frame. Dark enough that the sheet is the brightest thing on screen, but never a flat black or plain brown field.
+
+**Nothing floats.** Every part of the machine must visibly attach to another part. The carriage is built as an open brass tie-rod frame: two end castings carry the platen shaft in bearing bosses, brass rods run frame to frame and are nutted at both ends, the line gauge is bolted across the front of both castings, the bail hangs from arms whose pivots sit on the castings, the feed knob is joined to its casting by a shaft, and the castings themselves reach up to the rail the carriage rides on. The frames are tarnished brass with verdigris in the pits; a rod or bar that ends in mid-air is a bug, not a style choice.
+
+Because the machine is seen from the front and slightly above, parts behind the platen (rail, escapement rack, upper tie rod) render above the roller, and parts in front of it (line gauge, margin stops, bail, lower rod) render below it, over the sheet.
+
+**The body.** The carriage is bolted to a machine, and that machine is a skeleton portable: light brass side castings standing either side of the paper and rising to the carriage, each pierced with a lightening hole, a small open ribbon spool sitting on top of each, brass cross rods spanning the front face, and a dark hood below the opening. The sheet feeds up behind the platen, wraps over the roller and hangs down toward the typist, so on screen the body sits below and behind the carriage, and the sheet opening paints over the parts that pass behind the paper. The maker's plate on the front face is stamped `VERSION x.xx` with the build version rather than a model name.
+
+**The opening never clips the paper.** The sheet is never cut off at the frame: it travels sideways out past the machine the way paper hangs out of a real one, and feeds up past the platen and beyond it. What keeps the machine visible is z-order, not clipping. The body is built in two layers with the paper between them: the side castings and spools sit behind the sheet, so travelling paper rides over them; the front face sits in front of the sheet, so hanging paper disappears into the machine instead of burying the hood and the version plate. The front face runs off the bottom of the frame rather than ending in a band, because paper visible below the machine's own front would mean the sheet had come out underneath it.
+
+**The opening is not a panel.** The sheet opening paints no background of its own. Whatever the paper does not cover is the inside of the machine and is drawn as such: the well, the fan of typebars converging on the strike point at the top of the opening, the slotted segment arc they rise through, and the ribbon running across at the strike line. A flat rectangle behind the paper is a bug: it hides the machine the rest of the work went into building.
 
 - **Type guide** marks where the next character will land. This is the cursor. It should look like a metal slot, not a blinking text caret. A blinking element is acceptable if it is a thin ink-colored underscore inside the guide.
-- **Carriage return lever** on the left, visually present, animates on Enter, clickable as an alternate way to return.
+- **Carriage return lever** on the left, visually present, animates on Enter, clickable as an alternate way to return. It is a linkage, not a bar: a bracket bolted to the left casting, a notched quadrant the arm sweeps against, a pivot boss with the coil return spring wound around it, and a brass rod carrying a thumb-worn paddle. Only the arm swings; the bracket, quadrant, spring and boss stay put.
 - **Bell:** rings once when the carriage reaches 7 to 8 characters before the right margin. This is a strong realism cue and costs almost nothing.
-- **Margin stops** visible on a scale above the platen if a full machine body is drawn.
+- **Margin stops** ride on the line gauge in front of the platen.
 
 ## 6. Motion
 
@@ -79,7 +89,7 @@ Choose the fixed-strike-point model: the ink line's active character cell stays 
 
 ## 7. Editing model - the hard part
 
-The user must be able to "go back and retype anything they want" without the app collapsing into a text editor. There are two modes, and the key binding for correction **flips between them**. This is the only behavioral difference between the modes.
+The user must be able to "go back and retype anything they want" without the app collapsing into a text editor. There are two modes. The correction binding and margin wrapping differ between them.
 
 ### Default mode (Realism Mode OFF)
 
@@ -87,6 +97,7 @@ The forgiving mode. This is what a first-time visitor gets.
 
 - **`Backspace` = white-out.** Steps the carriage back one cell and lays a correction patch over whatever was there, clearing it visually. Feels like a normal delete key, looks like correction tape rather than a digital erase.
 - **`Shift+Backspace` = carriage back only.** Moves the type guide left one cell without touching the ink, for deliberate overstriking.
+- **Word wrapping:** when a word crosses the right margin, carry the whole trailing word to the next row. Words wider than the page still split.
 
 ### Realism Mode ON
 
@@ -94,16 +105,21 @@ The honest machine. Toggled in the settings card (section 9), persisted, off by 
 
 - **`Backspace` = carriage back only, no erase.** Ink already on the paper stays. The type guide moves left. Typing now overstrikes.
 - **`Shift+Backspace` = white-out.** Paints the correction patch.
+- **Hard wrapping:** advance at the right margin without moving the word, so a word can split between rows.
 
 ### Shared affordances (both modes)
 
 - **Correction patch rendering:** an opaque paper-colored patch over the cell, slightly larger than the glyph, with soft irregular edges and a very faintly different paper tone so it stays visible as a correction rather than a clean erase. Typing over the patch lays fresh ink on top. Play the correction tape squeak on every patch, in both modes - the sound is what tells the user which thing just happened.
-- **X-out:** hold a modifier and type to strike `x` or `/` characters over existing text, the traditional fast correction.
+- **X-out:** hold `Alt` and press `x` or `/` to strike that character over existing text, the traditional fast correction. `Alt` rather than `Ctrl`, which the browser owns for Cut.
 - **Undo (`Ctrl+Z`)** removes the last impression outright, with a short rewind sound. Available in both modes; frame it as an anachronistic convenience, not a typewriter feature. In Realism Mode it stays available but is not surfaced in the UI.
 
 Because the binding flips, the app must always be able to answer "which mode am I in" without opening settings: the Realism Mode key on the button rail (section 8) sits visibly depressed/latched down when active, the way a shift-lock key does.
 
-**Free positioning.** Arrow keys move the type guide anywhere on the sheet, cell by cell, with the corresponding carriage and platen sounds. Clicking a cell moves the guide there (with a carriage travel animation, not a jump). This is what makes "retype anything" work.
+**Free positioning.** Arrow keys move the type guide anywhere on the sheet, cell by cell, with the corresponding carriage and platen sounds. `PageUp` moves to row zero; `PageDown` moves to the final created row without extending the paper. Clicking a cell moves the guide there (with a carriage travel animation, not a jump). This is what makes "retype anything" work.
+
+**Type size on phones.** An upright phone gets larger type than a desktop window does, not smaller. A 65-column line cannot fit across a phone at any size worth reading, and the carriage pins the active cell under the type guide regardless, so shrinking the glyphs to reveal more columns buys nothing and costs legibility. The line crops horizontally and the paper stays readable. This applies to upright phones only: held sideways, or in a short desktop window, the vertical room for taller rows is not there and the compact size stands.
+
+**Touch input.** On a device with no physical keyboard, tapping the sheet raises the software keyboard and typing goes onto the paper exactly as it does on desktop. This is plumbing, not feel: an off-screen field holds focus so the keyboard stays up, and everything it receives is replayed through the same strike path, so per-glyph variation, sound, and the shudder are identical. Two caveats follow from what software keyboards actually report. Predictive text and autocorrect are disabled outright, since a suggestion that rewrites a word already struck onto paper has no mechanical meaning. Backspace is delivered as a deletion intent rather than a key, so it maps to the current mode's unshifted binding only; there is no touch equivalent of the shifted variant.
 
 **Document model.** Store the page as a sparse grid of cells, each cell holding an ordered list of impressions (glyph, ink color, and the frozen randomization seed). Do not store a string. The grid-of-impressions model is what makes overstrike, correction patches, and per-glyph variation all fall out naturally, and it is worth the extra code. Persist to `localStorage` with a schema version field.
 
@@ -128,7 +144,7 @@ There is no conventional web UI in this app. Every control is a **typewriter key
 
 **Interaction.** Hover: the arm slides in 2 to 4 px and the cap brightens slightly. Press: the cap travels down along the arm's axis (not straight down the screen) by 3 to 5 px over about 70 ms, the arm flexes very slightly, and a key-press sample plays - a heavier, duller sample than a letter key, because these are function keys, not typebars. Release springs back with a small overshoot. Latching keys (Realism Mode, if surfaced on the rail) stay down.
 
-**ERASE confirmation.** Never a browser `confirm()` and never a generic modal. Erase slides in a small carbon-paper slip, tinted grey-purple and semi-transparent the way a real carbon copy is, reading something like "ERASE THIS PAGE? THIS CANNOT BE UNDONE." with two small key-style controls, **YES** and **NO**, styled identically to the rail keys. NO is the default focus. Confirming plays the paper-feed/roll sound as the sheet ejects, then a fresh sheet rolls in.
+**ERASE confirmation.** Never a browser `confirm()` and never a generic modal. Erase slides in a smaller version of the ruled buff Settings notecard, including its red rule, blue lines, paper grain, and dog-ear, reading something like "ERASE THIS PAGE? THIS CANNOT BE UNDONE." with two small key-style controls, **YES** and **NO**, styled identically to the rail keys. NO is the default focus. Confirming plays the paper-feed/roll sound as the continuous sheet clears.
 
 **Accessibility.** These are real, focusable `<button>` elements underneath the art. Keyboard focus draws a visible ink-colored ring on the key ring itself. Each has an accessible label. Tab order runs the rail after the sheet, so a typist never tabs out of the page by accident.
 
@@ -136,7 +152,8 @@ There is no conventional web UI in this app. Every control is a **typewriter key
 
 Settings are a physical object handed onto the desk, not a panel.
 
-**Object.** A small typewriter-era index/notecard: ruled buff-cream stock, a red header rule near the top, faint blue horizontal rules below it, slightly rounded corners, one soft dog-eared corner and a small coffee-ring or thumb smudge for wear. Roughly 3 by 5 inch proportions. Card stock is visibly a different, heavier, cooler paper than the sheet in the machine.
+<!-- `Claude:` the coffee ring is drawn from `assets/vector/coffee-stain1.svg`, used as a CSS mask so its colour and strength stay in the stylesheet. A CSS-gradient ring was tried first and rejected: too regular to read as a stain. -->
+**Object.** A small typewriter-era index/notecard: ruled buff-cream stock, a red header rule near the top, faint blue horizontal rules below it, slightly rounded corners, one soft dog-eared corner, and a thumb smudge plus a coffee ring for wear. The ring is irregular, drawn from artwork rather than generated, and sits under the type: it darkens the stock and the rules it crosses without obscuring anything. Roughly 3 by 5 inch proportions. Card stock is visibly a different, heavier, cooler paper than the sheet in the machine.
 
 **Entrance.** The card slides in from the upper right at a slight angle (about 3 to 6 degrees off square), overshoots by a few pixels, and settles - as though tossed onto the desk. 260 to 340 ms, ease-out. It casts a distinct drop shadow onto the sheet below and dims the sheet very slightly (no heavy modal scrim; a real card does not darken the desk). Exit reverses, slightly faster, sliding off up and right.
 
@@ -144,10 +161,10 @@ Settings are a physical object handed onto the desk, not a panel.
 
 **Contents.** Handwritten-label feel for headings (a period-appropriate script or the typewriter face in small caps), controls drawn as physical objects, never as OS form widgets:
 
-- **REALISM MODE** - a latching toggle drawn as a small metal lever or a stamped checkbox. Off by default. Beneath it, two lines of small print explaining the consequences: "Backspace moves the carriage without erasing. Use Shift+Backspace to white out." and "The ribbon wears out as you type." When toggled, the corresponding rail key latch state updates immediately.
-- **NEW RIBBON** - a small key-style control, shown only when Realism Mode is on and ribbon wear is past about half. Displays wear as a physical cue (a spool that empties, or a short worn/fresh bar in ink), not a percentage readout. Pressing it plays the ribbon-spool sound and resets density to full.
+- **REALISM MODE** - a latching toggle drawn as a small metal lever or a stamped checkbox. Off by default. Beneath it, explain: "Backspace moves the carriage without erasing. Use Shift+Backspace to white out." When toggled, the corresponding rail key latch state updates immediately.
 - **TYPEFACE** - a dropdown, but drawn as a small typebar selector or a card-stock select with an ink-drawn chevron. Lists the fonts from section 2 (TT2020, Courier Prime, Special Elite, Cutive Mono) with each option previewed in its own face. Switching re-renders existing impressions in the new face while preserving each impression's frozen random seed, so the page keeps its character.
 - **SOUND** - an on/off toggle plus a volume slider. The slider is a small brass thumbwheel or a lever in a slotted track, not an `<input type=range>` in its default skin. Moving it plays a single quiet keystroke sample at the new level so the user can hear what they are setting. Off silences everything including the card's own shuffle.
+- **SOUND PROFILE** - a stylized selector offering Soft Mechanical (the default), Chrome Office, Steel Foundry, Electric Teleprinter, and Precision Portable. Profiles change typing, carriage-return sweep, zipper rack, and stop-impact character together.
 
 All settings persist to `localStorage` and apply immediately - no OK/Apply button. Closing is a small **X** stamped in the card's corner, `Esc`, or clicking off the card.
 
@@ -155,11 +172,13 @@ All settings persist to `localStorage` and apply immediately - no OK/Apply butto
 
 ## 10. Sound
 
+**Current divergence.** The shipped engine synthesises every sound at runtime from oscillators, filtered noise and gain envelopes rather than playing recorded samples, because no sample files exist for this build. Everything else in this section holds as written: the variation rules, the event set, the mixing chain, the voice cap and the autoplay behavior are all implemented against synthesis variants instead of sample variants. `app.js` documents the swap-in path at the top of the file; the public API does not change when real samples arrive. Read "sample" below as "sample or synthesis variant" until then.
+
 Soft, warm, and never fatiguing. The user will type thousands of keystrokes; anything harsh or repetitive becomes intolerable in two minutes. Rules:
 
 - **Variation is mandatory.** Minimum 5 to 8 samples per event, chosen randomly, never the same sample twice in a row. Additionally randomize playback rate by plus or minus 4 percent and gain by plus or minus 2 dB.
 - **Layers per keystroke:** a soft key-down click, the typebar hitting the platen (the body of the sound), and a faint mechanical return. Distinguish key classes: space bar is deeper and duller, letter keys are sharper.
-- **Event set:** keystroke, space, backspace/carriage step, bell, carriage return sweep, platen line advance ratchet, paper feed/roll, correction tape squeak, ribbon advance tick (very quiet, every keystroke), ribbon spool swap, rail key press (heavier and duller than a letter key), settings card shuffle/crinkle.
+- **Event set:** keystroke, space, backspace/carriage step, bell, carriage return sweep, platen line advance ratchet, paper feed/roll, correction tape squeak, ribbon advance tick (very quiet, every keystroke), rail key press (heavier and duller than a letter key), settings card shuffle/crinkle.
 - **Mixing:** default master level low. Roll off above about 6 kHz so it reads as a machine in a room rather than a click track. Add a short, small room reverb (0.3 to 0.6 s, low wet mix). A subtle low-level room tone bed under the whole session is a strong immersion cue and is optional/toggleable.
 - **Engine:** Web Audio API with a preloaded, decoded buffer pool. Never `new Audio()` per keystroke. Must handle fast typists (12+ keys/sec) without stutter or voice buildup; cap concurrent voices and steal oldest.
 - **Autoplay:** audio context starts suspended, resumes on first user gesture. The first keystroke must not be silent, so resume on `keydown` before scheduling that keystroke's sample.
@@ -186,8 +205,7 @@ Soft, warm, and never fatiguing. The user will type thousands of keystrokes; any
 - Text-editor conveniences leaking in visually: no selection highlight in the browser default blue, no autocorrect, no spellcheck underlines, no scrollbars on the sheet.
 - Any control that looks like web UI: no hamburger, no gear icon, no floating action button, no toast notifications, no OS-default checkbox/select/range widgets, no browser `confirm()` or `alert()`.
 - A modal scrim behind the settings card. It is a card on a desk, not a dialog over an app.
-- Ribbon wear that outruns legibility, or that fades ink already on the page.
 
 ## 13. Acceptance test
 
-The build is right when: screenshot a paragraph, zoom to 400 percent, and no two instances of the same letter are identical; type with eyes closed and the sound alone tells you when you hit the margin bell and when you returned the carriage; backspace and retype a word and the result looks like a real corrected page rather than a clean edit; a first-time user can correct a typo with `Backspace` without reading anything, and a Realism Mode user can tell which mode they are in at a glance from the latched key; the settings card reads as an object that was placed on the desk rather than a panel that appeared; a 3000-strike session in Realism Mode has visibly tired ink but is still fully readable; and typing for ten minutes straight is pleasant rather than annoying.
+The build is right when: screenshot a paragraph, zoom to 400 percent, and no two instances of the same letter are identical; type with eyes closed and the sound alone tells you when you hit the margin bell and when you returned the carriage; backspace and retype a word and the result looks like a real corrected page rather than a clean edit; a first-time user can correct a typo with `Backspace` without reading anything, and a Realism Mode user can tell which mode they are in at a glance from the latched key; the settings card reads as an object that was placed on the desk rather than a panel that appeared; crossing the initial paper boundary preserves every earlier line; and typing for ten minutes straight is pleasant rather than annoying.
